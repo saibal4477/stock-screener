@@ -9,6 +9,7 @@ screener.db
 *.csv
 temp_stooq_extract/
 temp_stooq_5min_extract/
+archive/
 
 # Python environment & cache
 .venv/
