@@ -33,7 +33,7 @@ DB_PATH = "screener.db"
 
 # Centralized Config Paths for consolidated S/R and trading rules
 
-ARTIFACTS_DIR = r"C:\Users\saiba\.gemini\antigravity\brain\2797a877-0142-40a9-a54a-054a5568fae1"
+ARTIFACTS_DIR = r"C:\Users\saiba\.gemini\antigravity\brain\e45b717b-e889-4495-a9ea-8c882f2d80f8"
 RULES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trading_rules.json")
 # Additional Constants for data extraction
 EXTRACT_DIR = r"C:\stock-data"
