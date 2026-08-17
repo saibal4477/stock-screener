@@ -1,0 +1,24 @@
+# Database files
+screener.db
+*.db
+
+# Data files & zip archives
+*.zip
+*.txt
+!requirements.txt
+*.csv
+temp_stooq_extract/
+temp_stooq_5min_extract/
+
+# Python environment & cache
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Charts & figure outputs
+charts/
+*.png

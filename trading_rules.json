@@ -1,0 +1,10 @@
+{
+  "portfolio_size": 50000.0,
+  "max_allocation_pct": 5.0,
+  "max_risk_pct": 1.0,
+  "min_risk_reward_ratio": 1.5,
+  "min_atr_multiple_sl": 1.5,
+  "min_price": 15.0,
+  "min_volume": 1000000,
+  "trend_lookback_days": 252
+}

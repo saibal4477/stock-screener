@@ -1,0 +1,176 @@
+[
+  {
+    "name": "9EMA_Touch",
+    "type": "long",
+    "description": "Very Very Short Term Pullback to 9 EMA in structural uptrend",
+    "conditions": [
+      "close > sma_50",
+      "sma_50 > sma_200",
+      "structural_uptrend",
+      "low <= ema_9",
+      "high >= ema_9",
+      "prev_close > prev_ema_9",
+      "rsi < 60"
+    ],
+    "sl_formula": "min(support, close - min_atr_multiple_sl * atr)",
+    "target_formula": "resistance - 0.50",
+    "target_timeframe": "5-10 days"
+  },
+  {
+    "name": "20EMA_Touch",
+    "type": "long",
+    "description": "Short Term Pullback to 20 EMA in structural uptrend",
+    "conditions": [
+      "close > sma_50",
+      "sma_50 > sma_200",
+      "structural_uptrend",
+      "low <= ema_20",
+      "high >= ema_20",
+      "prev_close > prev_ema_20",
+      "rsi < 60"
+    ],
+    "sl_formula": "min(support, close - min_atr_multiple_sl * atr)",
+    "target_formula": "resistance - 0.50",
+    "target_timeframe": "10-20 days"
+  },
+  {
+    "name": "50SMA_Fakeout",
+    "type": "long",
+    "description": "Medium Term Pullback Spring below 50 SMA in structural uptrend",
+    "conditions": [
+      "close > sma_50",
+      "sma_50 > sma_200",
+      "structural_uptrend",
+      "close > open",
+      "prev_close < prev_sma_50",
+      "rsi < 60"
+    ],
+    "sl_formula": "min(min(support, fakeout_low), close - min_atr_multiple_sl * atr)",
+    "target_formula": "resistance - 0.50",
+    "target_timeframe": "15-30 days"
+  },
+  {
+    "name": "200SMA_Fakeout",
+    "type": "long",
+    "description": "Long Term Value Spring below 200 SMA in structural uptrend",
+    "conditions": [
+      "close > sma_200",
+      "structural_uptrend",
+      "close > open",
+      "prev_close < prev_sma_200",
+      "rsi < 60"
+    ],
+    "sl_formula": "min(min(support, fakeout_low), close - min_atr_multiple_sl * atr)",
+    "target_formula": "resistance - 0.50",
+    "target_timeframe": "20-45 days"
+  },
+  {
+    "name": "9EMA_Touch_Short",
+    "type": "short",
+    "description": "Very Very Short Term Pullback to 9 EMA in structural downtrend",
+    "conditions": [
+      "close < sma_50",
+      "sma_50 < sma_200",
+      "structural_downtrend",
+      "low <= ema_9",
+      "high >= ema_9",
+      "prev_close < prev_ema_9",
+      "rsi > 40"
+    ],
+    "sl_formula": "max(resistance, close + min_atr_multiple_sl * atr)",
+    "target_formula": "support",
+    "target_timeframe": "5-10 days"
+  },
+  {
+    "name": "20EMA_Touch_Short",
+    "type": "short",
+    "description": "Short Term Pullback to 20 EMA in structural downtrend",
+    "conditions": [
+      "close < sma_50",
+      "sma_50 < sma_200",
+      "structural_downtrend",
+      "low <= ema_20",
+      "high >= ema_20",
+      "prev_close < prev_ema_20",
+      "rsi > 40"
+    ],
+    "sl_formula": "max(resistance, close + min_atr_multiple_sl * atr)",
+    "target_formula": "support",
+    "target_timeframe": "10-20 days"
+  },
+  {
+    "name": "50SMA_Fakeout_Short",
+    "type": "short",
+    "description": "Medium Term Pullback Spring above 50 SMA in structural downtrend",
+    "conditions": [
+      "close < sma_50",
+      "sma_50 < sma_200",
+      "structural_downtrend",
+      "close < open",
+      "prev_close > prev_sma_50",
+      "rsi > 40"
+    ],
+    "sl_formula": "max(max(resistance, fakeout_high), close + min_atr_multiple_sl * atr)",
+    "target_formula": "support",
+    "target_timeframe": "15-30 days"
+  },
+  {
+    "name": "200SMA_Fakeout_Short",
+    "type": "short",
+    "description": "Long Term Value Spring above 200 SMA in structural downtrend",
+    "conditions": [
+      "close < sma_200",
+      "structural_downtrend",
+      "close < open",
+      "prev_close > prev_sma_200",
+      "rsi > 40"
+    ],
+    "sl_formula": "max(max(resistance, fakeout_high), close + min_atr_multiple_sl * atr)",
+    "target_formula": "support",
+    "target_timeframe": "20-45 days"
+  },
+  {
+    "name": "50SMA_Crossover",
+    "type": "long",
+    "description": "Bullish crossover of the 50 SMA",
+    "conditions": [
+      "close > sma_200",
+      "sma_50 > sma_200",
+      "prev_close <= prev_sma_50",
+      "close > sma_50"
+    ],
+    "sl_formula": "min(support, close - min_atr_multiple_sl * atr)",
+    "target_formula": "resistance - 0.50",
+    "target_timeframe": "15-30 days"
+  },
+  {
+    "name": "Mean_Reversion",
+    "type": "long",
+    "description": "Bullish Mean Reversion spring reclaiming the lower Bollinger Band",
+    "conditions": [
+      "prev_close < prev_bollinger_lower",
+      "close > bollinger_lower",
+      "close > open"
+    ],
+    "sl_formula": "min(support, close - min_atr_multiple_sl * atr)",
+    "target_formula": "bollinger_mid",
+    "target_timeframe": "10-20 days"
+  },
+  {
+    "name": "Mega_Cap_Pullback",
+    "type": "long",
+    "description": "20 EMA Pullback for Mega Cap stocks (Market Cap >= 100B)",
+    "conditions": [
+      "market_cap >= 100000000000",
+      "close > sma_50",
+      "sma_50 > sma_200",
+      "structural_uptrend",
+      "low <= ema_20",
+      "high >= ema_20",
+      "prev_close > prev_ema_20"
+    ],
+    "sl_formula": "min(support, close - min_atr_multiple_sl * atr)",
+    "target_formula": "resistance - 0.50",
+    "target_timeframe": "10-20 days"
+  }
+]
