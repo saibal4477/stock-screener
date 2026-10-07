@@ -350,35 +350,26 @@ def parse_path_info_5min(filepath):
     return ticker, exchange, asset_type
 
 
-def load_historical_prices_5min(extract_dir):
+def stream_load_historical_prices_5min(zip_path):
+    import zipfile
     import time
-    from concurrent.futures import ProcessPoolExecutor
-    import shutil
     start_time = time.time()
     
-    search_dir = os.path.join(extract_dir, "data", "5 min", "us")
-    if not os.path.exists(search_dir):
-        print(f"Directory {search_dir} not found. Scanning recursively in {extract_dir}...")
-        search_dir = extract_dir
+    z = zipfile.ZipFile(zip_path, 'r')
+    txt_files = [f for f in z.namelist() if f.endswith('.txt') and 'data/5 min/us' in f.lower().replace('\\', '/')]
+    if not txt_files:
+        txt_files = [f for f in z.namelist() if f.endswith('.txt')]
         
-    print(f"Scanning for historical 5-minute files in {search_dir}...")
-    filepaths = []
-    for root, _, files in os.walk(search_dir):
-        for f in files:
-            if f.endswith(".txt"):
-                filepaths.append(os.path.join(root, f))
-                
-    total_files = len(filepaths)
-    print(f"Found {total_files} text files to process.")
+    total_files = len(txt_files)
     if total_files == 0:
-        print("No files found.")
+        z.close()
         return False
         
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
     cursor.execute("PRAGMA synchronous = OFF")
     cursor.execute("PRAGMA journal_mode = MEMORY")
+    cursor.execute("PRAGMA cache_size = -100000")
     
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS historical_prices_5min (
@@ -395,54 +386,66 @@ def load_historical_prices_5min(extract_dir):
     """)
     conn.commit()
     
-    print("Extracting ticker metadata...")
     ticker_metadata = []
-    for filepath in filepaths:
+    for filepath in txt_files:
         ticker, exchange, asset_type = parse_path_info_5min(filepath)
         ticker_metadata.append((ticker, exchange, asset_type))
         
-    print("Upserting ticker metadata to stocks table...")
     cursor.executemany(
         "INSERT OR IGNORE INTO stocks (ticker, exchange, type) VALUES (?, ?, ?)", 
         ticker_metadata
     )
     conn.commit()
     
-    print("Parsing files in parallel...")
+    insert_sql = "INSERT OR REPLACE INTO historical_prices_5min (ticker, date, time, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     batch = []
-    batch_size = 1000000
+    batch_size = 500000
     total_inserted = 0
     
-    insert_sql = "INSERT OR REPLACE INTO historical_prices_5min (ticker, date, time, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    
-    with ProcessPoolExecutor() as executor:
-        chunksize = max(1, total_files // 100)
-        jobs = executor.map(parse_file_5min, filepaths, chunksize=chunksize)
-        
-        for file_records in jobs:
-            if file_records:
-                batch.extend(file_records)
-                
-            if len(batch) >= batch_size:
-                cursor.executemany(insert_sql, batch)
-                conn.commit()
-                total_inserted += len(batch)
-                print(f"Inserted {total_inserted} 5-minute price records...")
-                batch = []
-                
-        if batch:
+    for filepath in txt_files:
+        filename = filepath.replace('\\', '/').split('/')[-1]
+        ticker = filename.split('.')[0].upper()
+        if ticker.endswith(".US"):
+            ticker = ticker[:-3]
+        try:
+            raw_bytes = z.read(filepath)
+            content = raw_bytes.decode('ascii', errors='ignore')
+            lines = content.splitlines()
+            for line in lines[1:]:
+                parts = line.split(',')
+                if len(parts) >= 9:
+                    batch.append((
+                        ticker,
+                        int(parts[2]),
+                        int(parts[3]),
+                        float(parts[4]),
+                        float(parts[5]),
+                        float(parts[6]),
+                        float(parts[7]),
+                        int(float(parts[8]))
+                    ))
+        except Exception:
+            pass
+            
+        if len(batch) >= batch_size:
             cursor.executemany(insert_sql, batch)
             conn.commit()
             total_inserted += len(batch)
-            print(f"Inserted {total_inserted} 5-minute price records...")
+            batch = []
             
-    print("Creating database index on historical_prices_5min...")
+    if batch:
+        cursor.executemany(insert_sql, batch)
+        conn.commit()
+        total_inserted += len(batch)
+        batch = []
+        
+    z.close()
+    
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_hist_5min_ticker_date_time ON historical_prices_5min(ticker, date DESC, time DESC)")
     conn.commit()
     conn.close()
-    
-    print(f"Successfully loaded {total_inserted} 5-minute historical rows into SQLite database in {time.time() - start_time:.2f} seconds.")
-    return True
+    print(f"Successfully loaded {total_inserted:,} 5-minute historical rows into SQLite database in {time.time() - start_time:.2f} seconds.")
+    return total_inserted
 
 
 
@@ -3307,10 +3310,9 @@ def import_historical_data_from_zip(zip_path: str) -> str:
 
 @mcp.tool()
 def import_5min_data_from_zip(zip_path: str) -> str:
-    """Extract and load historical 5-minute price records from a Stooq ZIP file (e.g. 5_us_txt.zip).
+    """Stream and load historical 5-minute price records directly from a Stooq ZIP file (e.g. 5_us_txt.zip).
     
-    This updates the historical_prices_5min table in screener.db.
-    The temporary unzipped files are automatically cleaned up afterward.
+    This updates the historical_prices_5min table in screener.db and rebuilds the query index.
     
     Args:
         zip_path: Absolute path to the 5_us_txt.zip file on disk.
@@ -3318,27 +3320,13 @@ def import_5min_data_from_zip(zip_path: str) -> str:
     if not os.path.exists(zip_path):
         return f"Error: ZIP file not found at '{zip_path}'."
         
-    import shutil
-    temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_stooq_5min_extract")
-    
     try:
-        print(f"Extracting {zip_path} to {temp_dir}...")
-        extract_zip(zip_path, temp_dir)
-        
-        print("Loading 5-minute historical prices into database...")
-        success = load_historical_prices_5min(temp_dir)
-        
-        # Cleanup temporary files
-        print("Cleaning up temporary extracted files...")
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        print("Cleaned up successfully!")
-        
-        if success:
-            return "5-minute data import completed successfully! Text files cleaned up from disk."
+        total = stream_load_historical_prices_5min(zip_path)
+        if total:
+            return f"5-minute data import completed successfully! Loaded {total:,} records."
         else:
-            return "Data import failed (no files found or database error)."
+            return "Data import failed (no files found in ZIP)."
     except Exception as e:
-        shutil.rmtree(temp_dir, ignore_errors=True)
         return f"Error running 5-minute data import: {str(e)}"
 
 
