@@ -901,6 +901,26 @@
         </div>
       </div>
 
+      <!-- Live 15-Minute Setup Charts Gallery -->
+      <div id="liveChartsSection" class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-800 gap-2">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+              <span>📊</span><span>10:00 AM Setup Candlestick Charts Gallery</span>
+            </h3>
+            <p class="text-xs text-gray-400 mt-0.5">Real-time 15-minute candlestick charts showing 30-min Opening Range (RH, RL, FH, FL) &amp; Fader Entry</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs text-emerald-400 font-mono bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800">
+              ⚡ Generated from Live 15m Bars
+            </span>
+          </div>
+        </div>
+        <div id="liveChartsGallery" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Dynamically populated with charts -->
+        </div>
+      </div>
+
       <!-- All Opportunities Table -->
       <div class="card-dark rounded-2xl border border-gray-800 overflow-hidden">
         <div class="p-4 border-b border-gray-800 flex items-center justify-between">
@@ -922,6 +942,7 @@
                 <th class="py-3 px-3 text-right">Planned R:R</th>
                 <th class="py-3 px-3 text-center">Outcome</th>
                 <th class="py-3 px-3 text-right">Realized R</th>
+                <th class="py-3 px-3 text-center">Chart</th>
               </tr>
             </thead>
             <tbody id="liveTableBody" class="divide-y divide-gray-800 font-mono">
@@ -1812,7 +1833,7 @@
 
               <div class="text-xs text-gray-400 mb-3 flex items-center justify-between">
                 <span class="truncate max-w-[160px]">${o.company_name}</span>
-                <span class="text-[11px] font-mono text-gray-300">${o.setup_time}</span>
+                <span class="text-[11px] font-mono text-gray-300 font-bold">${o.setup_time}</span>
               </div>
 
               <div class="grid grid-cols-3 gap-2 text-[11px] font-mono bg-gray-900/80 p-2.5 rounded-xl border border-gray-800 mb-3">
@@ -1830,22 +1851,85 @@
                 </div>
               </div>
 
-              <div class="flex items-center justify-between text-[11px]">
+              <div class="flex items-center justify-between text-[11px] mb-3">
                 <span class="text-gray-400">Risk: <strong class="text-white">$${o.dollar_risk.toFixed(2)}</strong> (Silent: ${o.silent_pct}%)</span>
                 <span class="px-2 py-0.5 rounded text-[10px] font-mono ${statusBadgeClass}">
                   ${statusLabel}
                 </span>
               </div>
+
+              <button onclick="openLiveChartModal(${JSON.stringify(o).replace(/"/g, '&quot;')})" 
+                      class="w-full py-2 bg-gray-800 hover:bg-sky-600 text-gray-200 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-gray-700">
+                <span>📊</span>
+                <span>View 15m Setup Chart</span>
+              </button>
             </div>
           `;
         }).join('');
+      }
+
+      // Render Charts Gallery (Top 4 setups)
+      const gallery = document.getElementById('liveChartsGallery');
+      if (gallery) {
+        const gallerySetups = ops.slice(0, 4);
+        if (gallerySetups.length === 0) {
+          gallery.innerHTML = '<div class="text-gray-500 text-xs italic col-span-2 py-4">No setups found matching criteria.</div>';
+        } else {
+          gallery.innerHTML = gallerySetups.map(o => {
+            const params = new URLSearchParams({
+              setup_time: o.setup_time,
+              direction: o.direction,
+              tested_level: o.tested_level,
+              level_price: o.level_price,
+              rh: o.rh,
+              rl: o.rl,
+              entry_price: o.entry_price,
+              stop_loss: o.stop_loss,
+              target_profit: o.target_profit,
+              exit_price: o.exit_price || 0,
+              status: o.status,
+              planned_rr: o.planned_rr,
+              realized_r: o.realized_r !== null ? o.realized_r : 0
+            });
+            const chartUrl = `/api/live_chart/${o.ticker}/${o.session_date}?${params.toString()}`;
+            const isShort = o.direction === 'SHORT';
+
+            return `
+              <div class="card-darker p-4 rounded-2xl border border-gray-800 hover:border-sky-500/60 transition shadow-xl space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base font-black text-white font-mono">${o.ticker}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded font-bold ${isShort ? 'bg-sky-950 text-sky-400 border border-sky-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                      ${isShort ? '📉 SHORT ' + o.tested_level : '📈 LONG ' + o.tested_level}
+                    </span>
+                    <span class="text-[11px] font-mono text-gray-300 font-bold">${o.setup_time}</span>
+                  </div>
+                  <span class="text-xs font-mono font-black text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
+                    ${o.planned_rr}x R:R
+                  </span>
+                </div>
+
+                <div class="rounded-xl overflow-hidden border border-gray-700 bg-gray-950 p-1 flex items-center justify-center min-h-[260px] relative">
+                  <img src="${chartUrl}" class="w-full h-auto rounded-lg" alt="${o.ticker} Chart" loading="lazy">
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-mono pt-1 text-gray-400 gap-2">
+                  <span>Entry: <strong class="text-white">$${o.entry_price.toFixed(2)}</strong> | Stop: <strong class="text-rose-400">$${o.stop_loss.toFixed(2)}</strong> | TP: <strong class="text-emerald-400">$${o.target_profit.toFixed(2)}</strong></span>
+                  <a href="${chartUrl}" target="_blank" class="text-sky-400 hover:underline flex items-center space-x-1">
+                    <span>Fullscreen</span><span>↗</span>
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
       }
 
       // Render Table
       document.getElementById('liveTableCount').innerText = `${ops.length} Qualified Setups`;
       const tableBody = document.getElementById('liveTableBody');
       if (ops.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="11" class="py-6 text-center text-gray-500">No setups found matching criteria.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="12" class="py-6 text-center text-gray-500">No setups found matching criteria.</td></tr>`;
       } else {
         tableBody.innerHTML = ops.map(o => {
           const isShort = o.direction === 'SHORT';
@@ -1866,7 +1950,7 @@
           return `
             <tr class="hover:bg-gray-800/50 transition">
               <td class="py-2.5 px-3 font-bold text-white">${o.ticker}</td>
-              <td class="py-2.5 px-3 text-gray-300">${o.setup_time}</td>
+              <td class="py-2.5 px-3 text-gray-300 font-bold">${o.setup_time}</td>
               <td class="py-2.5 px-3">
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isShort ? 'bg-sky-950 text-sky-400' : 'bg-amber-950 text-amber-400'}">
                   ${o.direction}
@@ -1880,10 +1964,100 @@
               <td class="py-2.5 px-3 text-right font-bold text-emerald-400">${o.planned_rr}x</td>
               <td class="py-2.5 px-3 text-center">${outcomeBadge}</td>
               <td class="py-2.5 px-3 text-right ${realizedClass}">${realizedStr}</td>
+              <td class="py-2.5 px-3 text-center">
+                <button onclick="openLiveChartModal(${JSON.stringify(o).replace(/"/g, '&quot;')})" 
+                        class="px-2.5 py-1 bg-sky-950 hover:bg-sky-600 text-sky-300 hover:text-white rounded text-[11px] font-bold border border-sky-800 transition flex items-center justify-center space-x-1 mx-auto">
+                  <span>📊</span><span>Chart</span>
+                </button>
+              </td>
             </tr>
           `;
         }).join('');
       }
+    }
+
+    function openLiveChartModal(o) {
+      const modal = document.getElementById('tradeModal');
+      const modalContent = document.getElementById('modalContent');
+      
+      const params = new URLSearchParams({
+        setup_time: o.setup_time,
+        direction: o.direction,
+        tested_level: o.tested_level,
+        level_price: o.level_price,
+        rh: o.rh,
+        rl: o.rl,
+        entry_price: o.entry_price,
+        stop_loss: o.stop_loss,
+        target_profit: o.target_profit,
+        exit_price: o.exit_price || 0,
+        status: o.status,
+        planned_rr: o.planned_rr,
+        realized_r: o.realized_r !== null ? o.realized_r : 0
+      });
+      
+      const chartUrl = `/api/live_chart/${o.ticker}/${o.session_date}?${params.toString()}`;
+      
+      const isShort = o.direction === 'SHORT';
+      let statusBadge = `<span class="px-2.5 py-1 rounded text-xs font-bold font-mono bg-amber-950 text-amber-300 border border-amber-800">${o.status}</span>`;
+      if (o.status === 'TARGET_HIT') statusBadge = `<span class="px-2.5 py-1 rounded text-xs font-bold font-mono bg-emerald-950 text-emerald-300 border border-emerald-800">TARGET HIT 🎯 (+${o.planned_rr} R)</span>`;
+      else if (o.status === 'STOPPED_OUT') statusBadge = `<span class="px-2.5 py-1 rounded text-xs font-bold font-mono bg-rose-950 text-rose-300 border border-rose-800">STOPPED OUT 🛑 (-1.0 R)</span>`;
+      else if (o.status === 'CLOSED_AT_EOD') statusBadge = `<span class="px-2.5 py-1 rounded text-xs font-bold font-mono bg-sky-950 text-sky-300 border border-sky-800">CLOSED AT EOD (${o.realized_r >= 0 ? '+' : ''}${o.realized_r} R)</span>`;
+
+      modalContent.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-800 mb-4 gap-2">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="text-2xl font-black text-white font-mono">${o.ticker}</h2>
+              <span class="text-xs px-2.5 py-0.5 rounded font-bold ${isShort ? 'bg-sky-950 text-sky-400 border border-sky-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                ${isShort ? '📉 SHORT ' + o.tested_level : '📈 LONG ' + o.tested_level}
+              </span>
+              ${statusBadge}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">${o.company_name} • Setup Formed: <strong class="text-amber-300">${o.setup_time}</strong> (${o.session_date})</p>
+          </div>
+          <div class="text-right font-mono">
+            <div class="text-emerald-400 font-black text-lg">${o.planned_rr}x Planned R:R</div>
+            <div class="text-[11px] text-gray-400">Silent Candle: ${o.silent_pct}% ATR</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-900/80 p-3.5 rounded-xl border border-gray-800 mb-4 text-xs font-mono">
+          <div>
+            <span class="text-gray-400 block text-[10px] uppercase">Entry Price</span>
+            <span class="font-bold text-white text-sm">$${o.entry_price.toFixed(2)}</span>
+          </div>
+          <div>
+            <span class="text-rose-400 block text-[10px] uppercase">Stop Loss</span>
+            <span class="font-bold text-rose-400 text-sm">$${o.stop_loss.toFixed(2)}</span>
+          </div>
+          <div>
+            <span class="text-emerald-400 block text-[10px] uppercase">Target Profit</span>
+            <span class="font-bold text-emerald-400 text-sm">$${o.target_profit.toFixed(2)}</span>
+          </div>
+          <div>
+            <span class="text-amber-400 block text-[10px] uppercase">Tested Level</span>
+            <span class="font-bold text-amber-300 text-sm">${o.tested_level} ($${o.level_price.toFixed(2)})</span>
+          </div>
+        </div>
+
+        <!-- Embedded Candlestick Chart -->
+        <div class="mt-4 pt-3 border-t border-gray-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>📊</span><span>15-Minute Candlestick Chart (Opening Range &amp; Setup Trigger)</span>
+            </span>
+            <a href="${chartUrl}" target="_blank" class="text-xs text-sky-400 hover:text-sky-300 underline font-mono flex items-center space-x-1">
+              <span>Open Fullscreen</span><span>↗</span>
+            </a>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-gray-700 bg-gray-950 flex items-center justify-center p-1 shadow-2xl min-h-[300px]">
+            <img src="${chartUrl}" class="w-full h-auto rounded-lg" alt="${o.ticker} Live Chart">
+          </div>
+        </div>
+      `;
+      
+      modal.classList.remove('hidden');
     }
 
     document.addEventListener('keydown', (e) => {

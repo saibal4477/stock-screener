@@ -8,7 +8,7 @@ import os
 import config
 from core.db import get_connection, get_universe_tickers, get_company_metadata
 from core.portfolio import simulate_portfolio
-from core.charting import generate_candlestick_chart
+from core.charting import generate_candlestick_chart, generate_live_candlestick_chart
 from core.live_screener import scan_live_market, get_market_status
 from strategies import list_strategies, get_strategy
 
@@ -271,6 +271,53 @@ def api_get_chart(
         ok = generate_candlestick_chart(ticker, date, trade_info, chart_path)
         if not ok:
             raise HTTPException(status_code=404, detail="Candlestick data not found for ticker/date")
+
+    return FileResponse(chart_path, media_type="image/png")
+
+@app.get("/api/live_chart/{ticker}/{session_date}")
+def api_get_live_chart(
+    ticker: str,
+    session_date: str,
+    setup_time: str = "10:00 EST",
+    direction: str = "SHORT",
+    tested_level: str = "RH",
+    level_price: float = 0.0,
+    rh: float = 0.0,
+    rl: float = 0.0,
+    entry_price: float = 0.0,
+    stop_loss: float = 0.0,
+    target_profit: float = 0.0,
+    exit_price: float = 0.0,
+    status: str = "ACTIVE_IN_PLAY",
+    planned_rr: float = 1.5,
+    realized_r: Optional[float] = None
+):
+    safe_time = setup_time.replace(":", "").replace(" ", "_")
+    chart_name = f"live_chart_{ticker}_{session_date}_{safe_time}.png"
+    chart_path = os.path.join(config.CHARTS_DIR, chart_name)
+
+    trade_info = {
+        'ticker': ticker,
+        'session_date': session_date,
+        'setup_time': setup_time,
+        'direction': direction,
+        'tested_level': tested_level,
+        'level_price': level_price,
+        'rh': rh,
+        'rl': rl,
+        'entry_price': entry_price,
+        'stop_loss': stop_loss,
+        'target_profit': target_profit,
+        'exit_price': exit_price,
+        'status': status,
+        'planned_rr': planned_rr,
+        'realized_r': realized_r
+    }
+
+    if not os.path.exists(chart_path):
+        ok = generate_live_candlestick_chart(ticker, session_date, trade_info, chart_path)
+        if not ok:
+            raise HTTPException(status_code=404, detail=f"Chart could not be generated for {ticker}")
 
     return FileResponse(chart_path, media_type="image/png")
 
