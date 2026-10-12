@@ -9,6 +9,7 @@ import config
 from core.db import get_connection, get_universe_tickers, get_company_metadata
 from core.portfolio import simulate_portfolio
 from core.charting import generate_candlestick_chart
+from core.live_screener import scan_live_market, get_market_status
 from strategies import list_strategies, get_strategy
 
 app = FastAPI(
@@ -66,6 +67,30 @@ class BacktestRequest(BaseModel):
     direction_filter: str = "SHORTS_ONLY"
     min_planned_rr: float = 1.5
     strategy_params: Optional[Dict[str, Any]] = None
+
+class LiveScanRequest(BaseModel):
+    universe: str = "curated_30"
+    custom_tickers: Optional[str] = None
+    direction_filter: str = "SHORTS_ONLY"
+    min_planned_rr: float = 1.5
+
+@app.get("/api/market_status")
+def api_get_market_status():
+    return get_market_status()
+
+@app.post("/api/scan_live")
+def api_scan_live(req: LiveScanRequest):
+    tickers = get_universe_tickers(req.universe, req.custom_tickers)
+    if not tickers:
+        raise HTTPException(status_code=400, detail="No tickers resolved for selected universe")
+    # Cap to top 60 to prevent Yahoo Finance rate limits
+    if len(tickers) > 60:
+        tickers = tickers[:60]
+    return scan_live_market(
+        tickers=tickers,
+        direction_filter=req.direction_filter,
+        min_planned_rr=req.min_planned_rr
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index(request: Request):

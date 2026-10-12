@@ -62,6 +62,10 @@
           <span>📊</span>
           <span>3. Results Dashboard</span>
         </button>
+        <button onclick="switchTab('live')" id="tabLiveBtn" class="tab-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition flex items-center space-x-2 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 hover:from-amber-500/20 hover:to-emerald-500/20 text-amber-300 border border-amber-500/30">
+          <span>⚡</span>
+          <span>4. Live Yahoo Screener</span>
+        </button>
       </nav>
     </div>
   </header>
@@ -744,6 +748,192 @@
   </section>
 
   <!-- ========================================================================= -->
+  <!-- TAB 4: LIVE MARKET OPPORTUNITY SCREENER (YAHOO FINANCE API) -->
+  <!-- ========================================================================= -->
+  <section id="viewLive" class="max-w-7xl mx-auto space-y-8 hidden">
+    
+    <!-- Top Status Banner -->
+    <div class="card-dark p-6 md:p-8 rounded-3xl border border-amber-500/40 shadow-2xl relative overflow-hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-gray-800 mb-6 gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-3 py-1 rounded-full bg-amber-950/90 border border-amber-500/50 text-amber-400 text-xs font-bold tracking-wide uppercase flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <span id="liveStatusText">Live Yahoo Finance Scanner</span>
+            </span>
+            <span id="liveSessionBadge" class="px-2.5 py-1 rounded-full bg-gray-900 text-gray-300 border border-gray-700 text-xs font-mono">
+              Ready to Scan
+            </span>
+          </div>
+          <h2 class="text-xl md:text-2xl font-black text-white mt-2 flex items-center space-x-2">
+            <span>⚡ Today's Market Intraday Opportunity Scanner</span>
+          </h2>
+          <p class="text-xs md:text-sm text-gray-400 mt-1">
+            Scans real-time 15-minute bars via Yahoo Finance to detect opening 30-minute range breakouts &amp; Silent Candle fader setups.
+          </p>
+        </div>
+        
+        <div class="text-right">
+          <div id="liveClockText" class="text-xs text-gray-400 font-mono">EST Time</div>
+          <div class="text-[11px] text-emerald-400 mt-1 font-semibold">Rule: Triggers strictly after 30-min opening range</div>
+        </div>
+      </div>
+
+      <!-- Scanner Controls Form -->
+      <form id="liveScanForm" onsubmit="handleRunLiveScan(event)" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- 1. Stock Universe -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-amber-400 uppercase tracking-wider block">1. Universe to Scan</label>
+            <select id="liveUniverse" onchange="toggleCustomLiveUniverse()" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-amber-500">
+              <option value="curated_30" selected>🎯 Curated 30 High-Edge Stocks (Recommended)</option>
+              <option value="dow30">🏛️ Dow Jones Industrial Average (30 Stocks)</option>
+              <option value="nasdaq100">💻 Nasdaq 100 Leaders</option>
+              <option value="sp500">🌐 S&amp;P 500 Top Liquid Leaders (60 Stocks)</option>
+              <option value="custom">✏️ Custom Watchlist (Enter Tickers)</option>
+            </select>
+            <div id="customLiveUniverseContainer" class="hidden mt-2">
+              <input type="text" id="liveCustomTickers" placeholder="e.g. AAPL, MSFT, WMT, JPM, DIS" 
+                     class="w-full bg-gray-950 border border-amber-700 rounded-lg p-2 text-xs text-white">
+            </div>
+            <p class="text-[11px] text-gray-400 leading-tight">
+              Scans 15-minute bars live across the selected basket.
+            </p>
+          </div>
+
+          <!-- 2. Direction Preference -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-sky-400 uppercase tracking-wider block">2. Direction Filter</label>
+            <select id="liveDirection" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500">
+              <option value="SHORTS_ONLY" selected>📉 Shorts Only (Fade Resistance RH / FH — Recommended) 💎</option>
+              <option value="ALL">🔄 Both Shorts &amp; Longs (Full Market View)</option>
+              <option value="LONGS_ONLY">📈 Longs Only (Fade Support RL / FL)</option>
+            </select>
+            <p class="text-[11px] text-gray-400 leading-tight">
+              Historical backtest shows +127R shorting resistance vs negative edge buying dips.
+            </p>
+          </div>
+
+          <!-- 3. Minimum R:R Filter -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">3. Min Planned Reward/Risk</label>
+            <select id="liveMinRR" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="1.5" selected>Target ≥ 1.5x Risk (Recommended) 💎</option>
+              <option value="2.0">Target ≥ 2.0x Risk (Strict)</option>
+              <option value="3.0">Target ≥ 3.0x Risk (Asymmetric Only)</option>
+              <option value="1.0">Target ≥ 1.0x Risk (All Setups)</option>
+            </select>
+            <p class="text-[11px] text-gray-400 leading-tight">
+              Distance to opposite range boundary must exceed this multiplier.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex items-center justify-between pt-2">
+          <div class="text-xs text-gray-400 flex items-center space-x-1.5">
+            <span>⚡</span>
+            <span>Live data streamed via Yahoo Finance. Scans all bars after the 30-min opening range.</span>
+          </div>
+
+          <button type="submit" id="btnRunLiveScan" 
+                  class="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-black text-sm rounded-xl shadow-xl shadow-amber-900/40 transition transform active:scale-95 flex items-center space-x-2">
+            <span id="liveSpinner" class="hidden animate-spin">⏳</span>
+            <span>▶ Scan Today's Opportunities</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Live Scan Empty State -->
+    <div id="liveEmptyState" class="card-dark p-12 rounded-3xl text-center border border-gray-800">
+      <div class="text-4xl mb-3">📡</div>
+      <h3 class="text-lg font-bold text-white">Ready to Scan Today's Market</h3>
+      <p class="text-xs text-gray-400 max-w-md mx-auto mt-1 mb-5">
+        Click "Scan Today's Opportunities" above to fetch live 15-minute price bars from Yahoo Finance and detect all qualified setups.
+      </p>
+      <button onclick="handleRunLiveScan(event)" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl transition">
+        ⚡ Run Live Scan Now
+      </button>
+    </div>
+
+    <!-- Live Scan Results Container -->
+    <div id="liveResultsContent" class="space-y-8 hidden">
+      
+      <!-- Summary KPI Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="card-dark p-4 rounded-xl border border-amber-500/30">
+          <div class="text-gray-400 text-xs uppercase font-medium">Opportunities Found</div>
+          <div id="kpiLiveCount" class="text-2xl font-black text-amber-400 mt-1">0</div>
+          <div id="kpiLiveUniverseCount" class="text-[11px] text-gray-400 mt-1">Across 30 stocks</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Top Planned R:R</div>
+          <div id="kpiLiveTopRR" class="text-2xl font-black text-emerald-400 mt-1">--</div>
+          <div class="text-[11px] text-gray-400 mt-1">Asymmetric risk/reward</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Session Date</div>
+          <div id="kpiLiveDate" class="text-xl font-black text-white mt-1">--</div>
+          <div id="kpiLiveDateSub" class="text-[11px] text-gray-400 mt-1">15-minute execution bars</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Direction Breakdown</div>
+          <div id="kpiLiveDirectionDist" class="text-lg font-black text-sky-400 mt-1">--</div>
+          <div class="text-[11px] text-gray-400 mt-1">Resistance vs Support</div>
+        </div>
+      </div>
+
+      <!-- Top Highlighted Opportunities (Visual Cards) -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-white flex items-center space-x-2">
+            <span>💎</span><span>Top High-Expectancy Setups</span>
+          </h3>
+          <span class="text-xs text-gray-400">Ranked by Planned Reward/Risk ratio</span>
+        </div>
+        <div id="liveCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- All Opportunities Table -->
+      <div class="card-dark rounded-2xl border border-gray-800 overflow-hidden">
+        <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+          <h3 class="text-sm font-bold text-white">📋 Complete Intraday Opportunity Log</h3>
+          <span id="liveTableCount" class="text-xs text-gray-400 font-mono">0 Setups</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-gray-900/80 text-gray-400 uppercase text-[10px] tracking-wider border-b border-gray-800">
+              <tr>
+                <th class="py-3 px-3">Ticker</th>
+                <th class="py-3 px-3">Setup Time</th>
+                <th class="py-3 px-3">Type</th>
+                <th class="py-3 px-3">Level Faded</th>
+                <th class="py-3 px-3 text-right">Entry Price</th>
+                <th class="py-3 px-3 text-right">Stop Loss</th>
+                <th class="py-3 px-3 text-right">Target</th>
+                <th class="py-3 px-3 text-right">Risk ($)</th>
+                <th class="py-3 px-3 text-right">Planned R:R</th>
+                <th class="py-3 px-3 text-center">Outcome</th>
+                <th class="py-3 px-3 text-right">Realized R</th>
+              </tr>
+            </thead>
+            <tbody id="liveTableBody" class="divide-y divide-gray-800 font-mono">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================================= -->
   <!-- TRADE INSPECTOR MODAL POPUP (EMBEDDED CANDLESTICK CHART) -->
   <!-- ========================================================================= -->
   <div id="tradeModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 md:p-6 hidden">
@@ -768,10 +958,12 @@
       document.getElementById('viewGuide').classList.add('hidden');
       document.getElementById('viewStudio').classList.add('hidden');
       document.getElementById('viewDashboard').classList.add('hidden');
+      document.getElementById('viewLive').classList.add('hidden');
 
       document.getElementById('tabGuideBtn').classList.remove('active');
       document.getElementById('tabStudioBtn').classList.remove('active');
       document.getElementById('tabDashboardBtn').classList.remove('active');
+      document.getElementById('tabLiveBtn').classList.remove('active');
 
       if (tab === 'guide') {
         document.getElementById('viewGuide').classList.remove('hidden');
@@ -782,6 +974,10 @@
       } else if (tab === 'dashboard') {
         document.getElementById('viewDashboard').classList.remove('hidden');
         document.getElementById('tabDashboardBtn').classList.add('active');
+      } else if (tab === 'live') {
+        document.getElementById('viewLive').classList.remove('hidden');
+        document.getElementById('tabLiveBtn').classList.add('active');
+        fetchLiveMarketStatus();
       }
     }
 
@@ -1489,13 +1685,213 @@
       document.body.removeChild(a);
     }
 
+    // Live Screener Controller Functions
+    function toggleCustomLiveUniverse() {
+      const val = document.getElementById('liveUniverse').value;
+      const container = document.getElementById('customLiveUniverseContainer');
+      if (val === 'custom') {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    async function fetchLiveMarketStatus() {
+      try {
+        const resp = await fetch('/api/market_status');
+        if (resp.ok) {
+          const data = await resp.json();
+          const badge = document.getElementById('liveSessionBadge');
+          const clock = document.getElementById('liveClockText');
+          if (badge) badge.innerText = data.status_label;
+          if (clock) clock.innerText = data.current_time_est;
+        }
+      } catch (e) {}
+    }
+
+    async function handleRunLiveScan(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('btnRunLiveScan');
+      const spinner = document.getElementById('liveSpinner');
+      if (btn) btn.disabled = true;
+      if (spinner) spinner.classList.remove('hidden');
+
+      const payload = {
+        universe: document.getElementById('liveUniverse').value,
+        custom_tickers: document.getElementById('liveCustomTickers') ? document.getElementById('liveCustomTickers').value : null,
+        direction_filter: document.getElementById('liveDirection').value,
+        min_planned_rr: parseFloat(document.getElementById('liveMinRR').value)
+      };
+
+      try {
+        const res = await fetch('/api/scan_live', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          alert('Live Scanner Error: ' + (err.detail || 'Failed to scan'));
+          return;
+        }
+
+        const data = await res.json();
+        renderLiveResults(data);
+      } catch (err) {
+        alert('Scan request failed: ' + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (spinner) spinner.classList.add('hidden');
+      }
+    }
+
+    function renderLiveResults(data) {
+      document.getElementById('liveEmptyState').classList.add('hidden');
+      document.getElementById('liveResultsContent').classList.remove('hidden');
+
+      const ops = data.opportunities || [];
+      document.getElementById('kpiLiveCount').innerText = data.opportunities_count || 0;
+      document.getElementById('kpiLiveUniverseCount').innerText = `Across ${data.scanned_tickers_count || 30} stocks scanned`;
+      document.getElementById('kpiLiveDate').innerText = data.scanned_date || 'Today';
+      document.getElementById('kpiLiveDateSub').innerText = data.market ? data.market.status_label : '15-min bars';
+
+      if (ops.length > 0) {
+        document.getElementById('kpiLiveTopRR').innerText = `${ops[0].planned_rr.toFixed(1)}x`;
+        const shorts = ops.filter(o => o.direction === 'SHORT').length;
+        const longs = ops.filter(o => o.direction === 'LONG').length;
+        document.getElementById('kpiLiveDirectionDist').innerText = `${shorts} Shorts / ${longs} Longs`;
+      } else {
+        document.getElementById('kpiLiveTopRR').innerText = '--';
+        document.getElementById('kpiLiveDirectionDist').innerText = '0 Setups';
+      }
+
+      // Render Cards (Top 6)
+      const cardsContainer = document.getElementById('liveCardsContainer');
+      const topOps = ops.slice(0, 6);
+      if (topOps.length === 0) {
+        cardsContainer.innerHTML = `
+          <div class="col-span-full card-darker p-8 rounded-2xl text-center border border-gray-800 text-gray-400">
+            No setups found meeting the planned R:R ≥ ${document.getElementById('liveMinRR').value}x filter for this session.
+          </div>
+        `;
+      } else {
+        cardsContainer.innerHTML = topOps.map(o => {
+          const isShort = o.direction === 'SHORT';
+          let statusBadgeClass = 'bg-gray-800 text-gray-300';
+          let statusLabel = o.status;
+          if (o.status === 'TARGET_HIT') {
+            statusBadgeClass = 'bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold';
+            statusLabel = 'TARGET HIT 🎯';
+          } else if (o.status === 'STOPPED_OUT') {
+            statusBadgeClass = 'bg-rose-950 text-rose-300 border border-rose-700 font-bold';
+            statusLabel = 'STOPPED OUT 🛑';
+          } else if (o.status === 'CLOSED_AT_EOD') {
+            statusBadgeClass = 'bg-sky-950 text-sky-300 border border-sky-700';
+            statusLabel = `EOD EXIT (${o.realized_r >= 0 ? '+' : ''}${o.realized_r}R) 🏁`;
+          } else if (o.status === 'ACTIVE_IN_PLAY') {
+            statusBadgeClass = 'bg-amber-950 text-amber-300 border border-amber-700 animate-pulse font-bold';
+            statusLabel = 'ACTIVE IN PLAY ⚡';
+          }
+
+          return `
+            <div class="card-darker p-5 rounded-2xl border ${isShort ? 'border-sky-800/60' : 'border-amber-800/60'} hover:border-amber-500/80 transition relative shadow-lg">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <span class="text-base font-black text-white">${o.ticker}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded font-bold ${isShort ? 'bg-sky-950 text-sky-400 border border-sky-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                    ${isShort ? '📉 SHORT ' + o.tested_level : '📈 LONG ' + o.tested_level}
+                  </span>
+                </div>
+                <span class="text-xs font-mono font-black text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
+                  ${o.planned_rr}x R:R
+                </span>
+              </div>
+
+              <div class="text-xs text-gray-400 mb-3 flex items-center justify-between">
+                <span class="truncate max-w-[160px]">${o.company_name}</span>
+                <span class="text-[11px] font-mono text-gray-300">${o.setup_time}</span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 text-[11px] font-mono bg-gray-900/80 p-2.5 rounded-xl border border-gray-800 mb-3">
+                <div>
+                  <span class="text-gray-500 block text-[9px] uppercase">Entry</span>
+                  <span class="font-bold text-white">$${o.entry_price.toFixed(2)}</span>
+                </div>
+                <div>
+                  <span class="text-rose-400 block text-[9px] uppercase">Stop Loss</span>
+                  <span class="font-bold text-rose-300">$${o.stop_loss.toFixed(2)}</span>
+                </div>
+                <div>
+                  <span class="text-emerald-400 block text-[9px] uppercase">Target</span>
+                  <span class="font-bold text-emerald-300">$${o.target_profit.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-gray-400">Risk: <strong class="text-white">$${o.dollar_risk.toFixed(2)}</strong> (Silent: ${o.silent_pct}%)</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono ${statusBadgeClass}">
+                  ${statusLabel}
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Table
+      document.getElementById('liveTableCount').innerText = `${ops.length} Qualified Setups`;
+      const tableBody = document.getElementById('liveTableBody');
+      if (ops.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="11" class="py-6 text-center text-gray-500">No setups found matching criteria.</td></tr>`;
+      } else {
+        tableBody.innerHTML = ops.map(o => {
+          const isShort = o.direction === 'SHORT';
+          let outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-gray-800 text-gray-300">${o.status}</span>`;
+          if (o.status === 'TARGET_HIT') {
+            outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">TARGET HIT</span>`;
+          } else if (o.status === 'STOPPED_OUT') {
+            outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-950 text-rose-400 border border-rose-800 font-bold">STOPPED</span>`;
+          } else if (o.status === 'CLOSED_AT_EOD') {
+            outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-sky-950 text-sky-400 border border-sky-800">EOD EXIT</span>`;
+          } else if (o.status === 'ACTIVE_IN_PLAY') {
+            outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-400 border border-amber-800 font-bold animate-pulse">ACTIVE</span>`;
+          }
+
+          const realizedStr = o.realized_r !== null ? `${o.realized_r >= 0 ? '+' : ''}${o.realized_r.toFixed(2)} R` : '--';
+          const realizedClass = o.realized_r !== null ? (o.realized_r > 0 ? 'text-emerald-400 font-bold' : (o.realized_r < 0 ? 'text-rose-400 font-bold' : 'text-gray-400')) : 'text-gray-500';
+
+          return `
+            <tr class="hover:bg-gray-800/50 transition">
+              <td class="py-2.5 px-3 font-bold text-white">${o.ticker}</td>
+              <td class="py-2.5 px-3 text-gray-300">${o.setup_time}</td>
+              <td class="py-2.5 px-3">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isShort ? 'bg-sky-950 text-sky-400' : 'bg-amber-950 text-amber-400'}">
+                  ${o.direction}
+                </span>
+              </td>
+              <td class="py-2.5 px-3 text-gray-300 font-sans">${o.tested_level} ($${o.level_price.toFixed(2)})</td>
+              <td class="py-2.5 px-3 text-right text-gray-200">$${o.entry_price.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right text-rose-400">$${o.stop_loss.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right text-emerald-400">$${o.target_profit.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right text-gray-400">$${o.dollar_risk.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right font-bold text-emerald-400">${o.planned_rr}x</td>
+              <td class="py-2.5 px-3 text-center">${outcomeBadge}</td>
+              <td class="py-2.5 px-3 text-right ${realizedClass}">${realizedStr}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
 
-    // Run default backtest automatically on load
+    // Run default backtest automatically on load & fetch market status
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnRunBacktest').click();
+      fetchLiveMarketStatus();
     });
   </script>
 </body>
