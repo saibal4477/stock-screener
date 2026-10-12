@@ -7,6 +7,8 @@ screener.db
 *.txt
 !requirements.txt
 *.csv
+!data/*.csv
+!data/*.json
 temp_stooq_extract/
 temp_stooq_5min_extract/
 archive/

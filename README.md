@@ -1,10 +1,41 @@
-# Unified Stock Screener MCP Server
+# Quantitative Stock Screener & Backtesting Platform
 
-A Model Context Protocol (MCP) server that provides a **100% database-driven** analytical screening and charting framework. It allows AI assistants (such as Claude Desktop or Cursor) to execute custom quantitative scans, analyze support/resistance levels, build trade plans, and render beautiful charts directly using an indexed SQLite database (`screener.db`).
+A complete institutional-grade suite featuring:
+1. **Interactive Web Backtesting Studio** (`app.py`) — Modern dark-mode web application for simulating realistic intraday day trading strategies with portfolio capital constraints, performance attribution breakdowns, and candlestick chart inspections.
+2. **Unified MCP Server** (`server.py`) — Model Context Protocol (FastMCP) server that provides an indexed SQLite database-driven analytical screening and charting framework for AI assistants (Claude Desktop, Cursor, Gemini).
 
 ---
 
-## 🛠️ Architecture & Replication Guide
+## 🚀 1. Interactive Web Backtesting Studio
+
+Run backtests for institutional intraday strategies (starting with the **Silent Flip Strategy** — opening range resistance/support fade) with sub-second simulation latency.
+
+### Key Features
+* **Modular Strategy Architecture:** Strategy plugins in `strategies/` inherit from `BaseStrategy` and automatically register in the UI.
+* **Realistic Portfolio Simulation:** Configure **Max Daily Capital Deployed** (e.g. $50,000), **Max Positions/Day** (e.g. 4 trades = $12,500/position), watchlist ranking, and intra-day cash sizing. Zero overnight risk (all trades exit by 3:55 PM EST).
+* **Performance Attribution & Win Breakdown:**
+  * **Short vs Long** (Discovers directional asymmetries, e.g., +127R shorting resistance vs negative edge buying opening dips).
+  * **Sector Analysis** (Defensives, Utilities, Financials, REITs vs high-beta Tech).
+  * **Key Structural Levels** (Range High $RH$, Flip High $FH$, Range Low $RL$, Flip Low $FL$).
+  * **Reward/Risk & Beta Sensitivity** (Filters for $R:R \ge 1.5$ yielding >70% win rates).
+* **Executed Trades Explorer:** Column-sortable interactive table with win/loss badges, dollar P&L, R-multiples, and exit reasons.
+* **Dynamic 15-Minute Candlestick Chart Modal:** Click any trade row to generate a high-resolution 15-minute candlestick chart with entry, stop loss, profit target, and exit execution overlays.
+
+### Quickstart (Web App)
+1. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Launch the Server:**
+   ```bash
+   python app.py
+   ```
+3. **Open in Browser:**
+   Navigate to [http://localhost:8000](http://localhost:8000)
+
+---
+
+## 🛠️ 2. Architecture & MCP Server Replication Guide
 
 This project is completely decoupled from local text files. The database is populated, indexed, and updated entirely via MCP tools. The system can be fully recreated on a clean computer using just **three files** and your Stooq ZIP archive:
 

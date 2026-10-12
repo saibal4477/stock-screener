@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlphaTrade Studio — Quantitative Strategy & Backtesting Platform</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #080c14; color: #f3f4f6; }
+    .card-dark { background: #0f172a; border: 1px solid #1e293b; }
+    .card-darker { background: #0a0f1d; border: 1px solid #1e293b; }
+    .card-glow-emerald { box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.4); }
+    .card-glow-sky { box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.25); border-color: rgba(56, 189, 248, 0.4); }
+    .card-glow-amber { box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.25); border-color: rgba(245, 158, 11, 0.4); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #080c14; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .tab-btn.active { background-color: #0284c7; color: #ffffff; border-color: #38bdf8; }
+    .tab-btn:not(.active) { background-color: #1e293b; color: #94a3b8; border-color: transparent; }
+    .tab-btn:not(.active):hover { background-color: #334155; color: #ffffff; }
+  </style>
+</head>
+<body class="min-h-screen p-3 md:p-6 lg:p-8">
+
+  <!-- Top Navigation & Brand Header -->
+  <header class="max-w-7xl mx-auto mb-6">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between pb-6 border-b border-gray-800 gap-4">
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-400 text-xs font-bold tracking-wide uppercase flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>AlphaTrade Backtest Engine v2.0</span>
+          </span>
+          <span class="px-2.5 py-1 rounded-full bg-sky-950 text-sky-400 border border-sky-800 text-xs font-mono">
+            SQLite Intraday Engine • 513 Stocks
+          </span>
+        </div>
+        <h1 class="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-white mt-2">
+          AlphaTrade <span class="text-sky-400 font-light">— Strategy Studio & Backtester</span>
+        </h1>
+        <p class="text-gray-400 text-xs md:text-sm mt-1">
+          Modular quantitative trading framework: strategy rule verification, realistic portfolio sizing, and trade candlestick inspection.
+        </p>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <nav class="flex items-center space-x-2 bg-gray-900/90 p-1.5 rounded-2xl border border-gray-800">
+        <button onclick="switchTab('guide')" id="tabGuideBtn" class="tab-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition flex items-center space-x-2">
+          <span>📖</span>
+          <span>1. Strategy Guide</span>
+        </button>
+        <button onclick="switchTab('studio')" id="tabStudioBtn" class="tab-btn active px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition flex items-center space-x-2">
+          <span>🧪</span>
+          <span>2. Backtest Studio</span>
+        </button>
+        <button onclick="switchTab('dashboard')" id="tabDashboardBtn" class="tab-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition flex items-center space-x-2">
+          <span>📊</span>
+          <span>3. Results Dashboard</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 1: STRATEGY EDUCATIONAL GUIDE & DIAGRAMS (SILENT FLIP DEEP DIVE) -->
+  <!-- ========================================================================= -->
+  <section id="viewGuide" class="max-w-7xl mx-auto space-y-8 hidden">
+    
+    <!-- Strategy Hero Banner -->
+    <div class="bg-gradient-to-r from-sky-950/80 via-slate-900 to-indigo-950/80 p-6 md:p-8 rounded-3xl border border-sky-800/60 shadow-2xl relative overflow-hidden">
+      <div class="max-w-3xl">
+        <span class="px-3 py-1 rounded-full bg-sky-900/80 text-sky-300 text-xs font-bold uppercase tracking-wider border border-sky-700">
+          Intraday Mean-Reversion Strategy
+        </span>
+        <h2 class="text-2xl md:text-3xl font-black text-white mt-3">
+          The Silent Flip Strategy <span class="text-sky-400 font-light">— Institutional Supply & Resistance Fading</span>
+        </h2>
+        <p class="text-gray-300 text-xs md:text-sm mt-3 leading-relaxed">
+          Created by <strong>Karl Eriksson (ProRealAlgos)</strong> and quantitatively backtested across 6,484 S&P 500 setups. 
+          The strategy targets the opening 15–45 minute morning volatility surge by fading key structural daily resistance levels 
+          when volatility contracts into a <strong>Silent Candle</strong>.
+        </p>
+        <div class="flex flex-wrap items-center gap-3 mt-5">
+          <button onclick="switchTab('studio')" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-900/40 transition">
+            🚀 Backtest This Strategy Now
+          </button>
+          <a href="https://www.youtube.com/watch?v=Q2QjB5jBTro" target="_blank" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-xl border border-gray-700 transition flex items-center space-x-1.5">
+            <span>📺</span><span>Watch Original Video</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Architecture & Setup Diagram -->
+    <div class="card-dark p-6 md:p-8 rounded-3xl border border-gray-800">
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-gray-800">
+        <div>
+          <h3 class="text-lg md:text-xl font-black text-white flex items-center space-x-2">
+            <span>📐 Strategy Anatomy & Visual Level Diagram</span>
+          </h3>
+          <p class="text-xs text-gray-400 mt-0.5">How key levels, the silent candle, entry, stop, and targets align</p>
+        </div>
+        <div class="text-xs text-emerald-400 font-mono font-bold bg-emerald-950/60 px-3 py-1.5 rounded-lg border border-emerald-800/80">
+          Target R:R ≥ 1.5x Required
+        </div>
+      </div>
+
+      <!-- Diagram SVG -->
+      <div class="rounded-2xl bg-gray-950 border border-gray-800 p-4 md:p-6 mb-8 flex justify-center">
+        <svg viewBox="0 0 900 380" class="w-full max-w-4xl h-auto">
+          <!-- Background Grid Lines -->
+          <line x1="50" y1="60" x2="850" y2="60" stroke="#fbbf24" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="60" y="50" fill="#fbbf24" font-size="12" font-weight="bold" font-family="Inter">RANGE HIGH (RH: Prior Day High Resistance)</text>
+
+          <line x1="50" y1="120" x2="850" y2="120" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>
+          <text x="60" y="112" fill="#e11d48" font-size="11" font-family="Inter">FLIP HIGH (FH: 30-Day Prior Supply Pivot)</text>
+
+          <line x1="50" y1="320" x2="850" y2="320" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="60" y="340" fill="#38bdf8" font-size="12" font-weight="bold" font-family="Inter">RANGE LOW (RL: Target / Prior Day Low Demand)</text>
+
+          <!-- Candle 1: Impulse into RH (9:30-9:45) -->
+          <line x1="220" y1="50" x2="220" y2="230" stroke="#10b981" stroke-width="2"/>
+          <rect x="205" y="70" width="30" height="130" fill="#10b981" rx="2"/>
+          <text x="180" y="250" fill="#94a3b8" font-size="10" font-family="Inter">Candle 1: Impulse</text>
+          <text x="190" y="265" fill="#94a3b8" font-size="9" font-family="Inter">(Tests RH Level)</text>
+
+          <!-- Candle 2: The Silent Candle (9:45-10:00) -->
+          <line x1="320" y1="55" x2="320" y2="125" stroke="#f43f5e" stroke-width="2"/>
+          <rect x="307" y="75" width="26" height="40" fill="#f43f5e" rx="2"/>
+          <circle cx="320" cy="55" r="4" fill="#ef4444"/>
+          <text x="290" y="40" fill="#ef4444" font-size="11" font-weight="bold" font-family="Inter">STOP LOSS (+1 tick)</text>
+
+          <text x="270" y="150" fill="#f59e0b" font-size="11" font-weight="bold" font-family="Inter">SILENT CANDLE</text>
+          <text x="255" y="165" fill="#94a3b8" font-size="9" font-family="Inter">Range ≤ 60% ATR</text>
+          <text x="250" y="180" fill="#94a3b8" font-size="9" font-family="Inter">Closes Inside Prior</text>
+
+          <!-- Entry Arrow -->
+          <path d="M 360 130 L 410 130" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3 3"/>
+          <circle cx="410" cy="130" r="5" fill="#f59e0b"/>
+          <text x="425" y="134" fill="#f59e0b" font-size="11" font-weight="bold" font-family="Inter">SELL ENTRY (Break of Low)</text>
+
+          <!-- Candle 3: Breakdown -->
+          <line x1="410" y1="120" x2="410" y2="220" stroke="#f43f5e" stroke-width="2"/>
+          <rect x="395" y="130" width="30" height="70" fill="#f43f5e" rx="2"/>
+
+          <!-- Candle 4 & 5: Cascade to Target -->
+          <line x1="500" y1="190" x2="500" y2="280" stroke="#f43f5e" stroke-width="2"/>
+          <rect x="485" y="200" width="30" height="70" fill="#f43f5e" rx="2"/>
+
+          <line x1="590" y1="260" x2="590" y2="330" stroke="#f43f5e" stroke-width="2"/>
+          <rect x="575" y="270" width="30" height="50" fill="#f43f5e" rx="2"/>
+
+          <!-- Exit Take Profit Point -->
+          <circle cx="590" cy="320" r="6" fill="#10b981"/>
+          <text x="610" y="324" fill="#10b981" font-size="12" font-weight="bold" font-family="Inter">TAKE PROFIT HIT (+2.15 R)</text>
+
+          <!-- Risk / Reward Bracket Visual -->
+          <line x1="770" y1="55" x2="770" y2="130" stroke="#ef4444" stroke-width="3"/>
+          <text x="785" y="95" fill="#ef4444" font-size="11" font-weight="bold" font-family="Inter">Risk = 1.0 R</text>
+          <text x="785" y="110" fill="#94a3b8" font-size="9" font-family="Inter">Tight ($0.40–$1.20)</text>
+
+          <line x1="770" y1="130" x2="770" y2="320" stroke="#10b981" stroke-width="3"/>
+          <text x="785" y="225" fill="#10b981" font-size="11" font-weight="bold" font-family="Inter">Reward ≥ 1.5x to 3.0x</text>
+          <text x="785" y="240" fill="#94a3b8" font-size="9" font-family="Inter">Large Asymmetric Win</text>
+        </svg>
+      </div>
+
+      <!-- Core Rules 3-Column Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        
+        <div class="bg-gray-900/80 p-5 rounded-2xl border border-gray-800">
+          <div class="text-sky-400 text-xs font-bold uppercase tracking-wider mb-2 flex items-center space-x-1.5">
+            <span>1️⃣</span><span>Key Level Verification</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            Price must test either <strong>Range High (RH)</strong> or <strong>Flip High (FH)</strong> during the morning session. 
+            The candle must respect the level without closing beyond a 0.3% breakout tolerance threshold.
+          </p>
+        </div>
+
+        <div class="bg-gray-900/80 p-5 rounded-2xl border border-gray-800">
+          <div class="text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 flex items-center space-x-1.5">
+            <span>2️⃣</span><span>The Silent Candle Trigger</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            Must form right at the level. Total candle range must be <strong>≤ 60% of ATR(14)</strong> and body must close inside 
+            prior candle. This confirms institutional order absorption and breakout exhaustion.
+          </p>
+        </div>
+
+        <div class="bg-gray-900/80 p-5 rounded-2xl border border-gray-800">
+          <div class="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2 flex items-center space-x-1.5">
+            <span>3️⃣</span><span>Execution & Asymmetry</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            Sell Stop 1 tick below Silent Candle Low. Stop Loss 1 tick above High. Distance to opposite Range Low target must be 
+            <strong>≥ 1.5× initial risk</strong>. Shift stop to breakeven at +1R. Close all trades at 3:55 PM EST.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Quantitative Edge Findings Box -->
+      <div class="bg-gradient-to-r from-emerald-950/40 to-slate-900 p-6 rounded-2xl border border-emerald-800/40">
+        <h4 class="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-3">
+          💡 The 3 Discoveries from 6,484 S&P 500 Trade Backtests
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-300">
+          <div>
+            <strong class="text-white block mb-1">1. Shorts Have Positive Expectancy:</strong>
+            Shorting Range High & Flip High generated <strong>+127.10 R</strong>. Buying Range Low lost <strong>-275.14 R</strong> due to morning opening breakdown cascades.
+          </div>
+          <div>
+            <strong class="text-white block mb-1">2. Defensive / Financial Dominance:</strong>
+            Financials, REITs, Utilities, and Staples delivered <strong>+142.78 R</strong>. Tech momentum stocks trend strongly through levels and should be avoided.
+          </div>
+          <div>
+            <strong class="text-white block mb-1">3. The 1.5x R:R Edge Multiplier:</strong>
+            Requiring target distance ≥ 1.5× risk produced a <strong>71.0% win rate</strong> and a <strong>5.37 profit factor</strong> in the curated 30-stock portfolio.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 2: BACKTEST STUDIO & CONFIGURATION PANEL -->
+  <!-- ========================================================================= -->
+  <section id="viewStudio" class="max-w-7xl mx-auto space-y-8">
+    
+    <div class="card-dark p-6 md:p-8 rounded-3xl border border-sky-900/40 shadow-2xl">
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-gray-800 mb-6 gap-2">
+        <div>
+          <h2 class="text-xl md:text-2xl font-black text-white flex items-center space-x-2">
+            <span>🧪 Backtest Simulation Studio</span>
+          </h2>
+          <p class="text-xs md:text-sm text-gray-400 mt-1">
+            Configure universe, date range, daily capital constraints, and risk parameters to simulate realistic execution.
+          </p>
+        </div>
+        <div class="text-xs text-gray-400 bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-800 font-mono">
+          Engine: SQLite Fast Indexed B-Tree
+        </div>
+      </div>
+
+      <!-- Studio Form -->
+      <form id="backtestForm" onsubmit="handleRunBacktest(event)" class="space-y-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- 1. Strategy Selector -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-sky-400 uppercase tracking-wider block">1. Strategy Module</label>
+            <select id="cfgStrategy" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500">
+              <option value="silent_flip" selected>Silent Flip (Intraday Resistance/Support Fade)</option>
+              <!-- Pluggable slots for future strategies -->
+              <option value="custom_strategy" disabled>+ Add Another Strategy (Drop in strategies/ folder)</option>
+            </select>
+            <p class="text-[11px] text-gray-400 leading-tight">
+              Modular architecture: new strategies added to <code class="text-sky-300">strategies/</code> appear automatically.
+            </p>
+          </div>
+
+          <!-- 2. Stock Universe -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">2. Stock Universe</label>
+            <select id="cfgUniverse" onchange="toggleCustomUniverse()" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="curated_30" selected>🎯 Curated 30 High-Edge Stocks (Recommended)</option>
+              <option value="dow30">🏛️ Dow Jones Industrial Average (30 Stocks)</option>
+              <option value="nasdaq100">💻 Nasdaq 100 (98 Stocks in DB)</option>
+              <option value="sp500">🌐 S&P 500 (502 Stocks)</option>
+              <option value="custom">✏️ Custom Watchlist (Enter Tickers)</option>
+            </select>
+            <div id="customUniverseContainer" class="hidden mt-2">
+              <input type="text" id="cfgCustomTickers" placeholder="e.g. AAPL, MSFT, BAC, SBUX, CVNA" 
+                     class="w-full bg-gray-950 border border-emerald-700 rounded-lg p-2 text-xs text-white">
+            </div>
+            <p class="text-[11px] text-gray-400 leading-tight">
+              Test across any major index or a custom monitored basket.
+            </p>
+          </div>
+
+          <!-- 3. Time Range -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-amber-400 uppercase tracking-wider block">3. Time Period</label>
+            <select id="cfgTimeRange" onchange="toggleCustomDates()" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-amber-500">
+              <option value="6m" selected>6 Months (Apr 16 – Oct 6, 2026 • 120 Trading Days • Full Sample)</option>
+              <option value="3m">3 Months (Jul 6 – Oct 6, 2026 • 66 Trading Days)</option>
+              <option value="1m">1 Month (Sep 6 – Oct 6, 2026 • 21 Trading Days)</option>
+              <option value="custom">📅 Custom Date Range (Within Apr 16 – Oct 6, 2026)</option>
+            </select>
+            <div id="customDatesContainer" class="hidden mt-2 grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">Start Date</label>
+                <input type="date" id="cfgStartDate" value="2026-04-16" min="2026-04-16" max="2026-10-06"
+                       class="w-full bg-gray-950 border border-amber-700 rounded-lg p-2 text-xs text-white">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">End Date</label>
+                <input type="date" id="cfgEndDate" value="2026-10-06" min="2026-04-16" max="2026-10-06"
+                       class="w-full bg-gray-950 border border-amber-700 rounded-lg p-2 text-xs text-white">
+              </div>
+            </div>
+            <div id="timeRangeNote" class="text-[11px] text-emerald-400 leading-tight">
+              ⚡ Full 120 trading days (Apr 16 – Oct 6, 2026) of high-resolution 15-minute bars.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Operational Constraints Sub-Grid -->
+        <div class="p-5 rounded-2xl bg-gray-900/60 border border-gray-800 space-y-4">
+          <div class="flex items-center space-x-2 text-xs font-bold text-gray-300 uppercase tracking-wider">
+            <span>💼</span><span>Real-World Operational & Portfolio Sizing Constraints</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            <!-- Daily Capital -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] text-gray-400 font-semibold block">Max Daily Capital Deployed ($)</label>
+              <input type="number" id="cfgDailyCapital" value="50000" step="any" min="0"
+                     class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2.5 text-xs text-white font-mono focus:border-sky-500">
+              <span class="text-[10px] text-gray-500 block">Total buying power used each day</span>
+            </div>
+
+            <!-- Max Trades / Day -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] text-gray-400 font-semibold block">Max Positions / Day</label>
+              <select id="cfgMaxTrades" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2.5 text-xs text-white font-mono focus:border-sky-500">
+                <option value="1">1 Trade / Day</option>
+                <option value="2">2 Trades / Day</option>
+                <option value="3">3 Trades / Day</option>
+                <option value="4" selected>4 Trades / Day ($12,500/pos)</option>
+                <option value="5">5 Trades / Day ($10,000/pos)</option>
+                <option value="6">6 Trades / Day</option>
+                <option value="8">8 Trades / Day</option>
+              </select>
+              <span class="text-[10px] text-gray-500 block">Daily position cap</span>
+            </div>
+
+            <!-- Max Monitored Stocks -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] text-gray-400 font-semibold block">Max Stocks Monitored / Day</label>
+              <input type="number" id="cfgMaxMonitor" value="30" step="1" min="1" max="500"
+                     class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2.5 text-xs text-white font-mono focus:border-sky-500">
+              <span class="text-[10px] text-gray-500 block">Screening watchlist size</span>
+            </div>
+
+          </div>
+
+          <!-- Strategy Parameter Filters -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-gray-800">
+            
+            <div class="space-y-1.5">
+              <label class="text-[11px] text-sky-400 font-semibold block">Direction & Structural Levels</label>
+              <select id="cfgDirection" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2.5 text-xs text-white focus:border-sky-500">
+                <option value="SHORTS_ONLY" selected>Option A: 100% Shorts Only @ RH & FH (Highest Edge) 💎</option>
+                <option value="NO_RL_LONGS">Option B: Drop RL Longs (Take RH/FH Shorts & FL Longs) 🟢</option>
+                <option value="ALL">Option C: All Signals (Longs + Shorts unfiltered)</option>
+                <option value="LONGS_ONLY">Option D: Longs Only (Support Bounces)</option>
+              </select>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-[11px] text-amber-400 font-semibold block">Planned Reward / Risk Threshold</label>
+              <select id="cfgMinRR" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2.5 text-xs text-white focus:border-amber-500">
+                <option value="0.0">No Minimum (All >= 0.8x)</option>
+                <option value="1.0">Target ≥ 1.0x Risk</option>
+                <option value="1.5" selected>Target ≥ 1.5x Risk (Recommended) 💎</option>
+                <option value="2.0">Target ≥ 2.0x Risk</option>
+                <option value="2.5">Target ≥ 2.5x Risk</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex items-center justify-between pt-2">
+          <div class="text-xs text-gray-400 flex items-center space-x-1.5">
+            <span>⚡</span>
+            <span>Intraday trades automatically exit before market close (3:55 PM EST). Zero overnight hold.</span>
+          </div>
+
+          <button type="submit" id="btnRunBacktest" 
+                  class="px-8 py-3.5 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 font-black text-sm rounded-xl shadow-xl shadow-sky-900/40 transition transform active:scale-95 flex items-center space-x-2">
+            <span id="btnSpinner" class="hidden animate-spin">⏳</span>
+            <span>▶ Run Backtest Simulation</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 3: BACKTEST RESULTS DASHBOARD -->
+  <!-- ========================================================================= -->
+  <section id="viewDashboard" class="max-w-7xl mx-auto space-y-8">
+    
+    <!-- Empty State Prompt (shown before any run) -->
+    <div id="resultsEmptyState" class="card-dark p-12 rounded-3xl text-center border border-gray-800">
+      <div class="text-4xl mb-3">🧪</div>
+      <h3 class="text-lg font-bold text-white">No Simulation Results Yet</h3>
+      <p class="text-xs text-gray-400 max-w-md mx-auto mt-1 mb-5">
+        Choose your parameters in the Backtest Studio and click "Run Backtest Simulation" to generate your portfolio metrics.
+      </p>
+      <button onclick="switchTab('studio')" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition">
+        Configure Backtest Parameters
+      </button>
+    </div>
+
+    <!-- Active Results Container -->
+    <div id="resultsContent" class="space-y-8 hidden">
+      
+      <!-- Top Banner Summary -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between bg-gradient-to-r from-emerald-950/80 via-slate-900 to-sky-950/80 p-5 rounded-2xl border border-emerald-500/40 shadow-xl gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xl">🏆</span>
+            <h3 class="text-lg font-black text-white" id="resStrategyTitle">Silent Flip Strategy — Portfolio Backtest</h3>
+          </div>
+          <p class="text-xs text-gray-300 mt-0.5" id="resSubtitle">
+            Universe: Curated 30 Stocks • Max 4 Positions/Day • $50,000 Daily Capital Deployed
+          </p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button onclick="switchTab('studio')" class="px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-xl border border-gray-700 transition">
+            ⚙️ Edit Inputs
+          </button>
+          <button onclick="exportCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg transition flex items-center space-x-1.5">
+            <span>📥</span><span>Export Trades CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 6 Executive KPI Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Net Dollar Profit</div>
+          <div id="kpiNetProfit" class="text-2xl font-black text-emerald-400 mt-1">+$12,601.05</div>
+          <div id="kpiTotalR" class="text-[11px] text-gray-400 mt-1">+142.78 R Multiple</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Return on Capital</div>
+          <div id="kpiRetDeployed" class="text-2xl font-black text-emerald-400 mt-1">+25.20%</div>
+          <div id="kpiRetAnn" class="text-[11px] text-emerald-400 font-semibold mt-1">~50.4% Annualized</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Win Rate</div>
+          <div id="kpiWinRate" class="text-2xl font-black text-white mt-1">71.0%</div>
+          <div id="kpiWinsLosses" class="text-[11px] text-emerald-400 mt-1">125W / 50L</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl card-glow-sky">
+          <div class="text-gray-400 text-xs uppercase font-medium">Profit Factor</div>
+          <div id="kpiProfitFactor" class="text-2xl font-black text-sky-400 mt-1">5.37</div>
+          <div class="text-[11px] text-gray-400 mt-1">Gross Win / Gross Loss</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Max Drawdown</div>
+          <div id="kpiMaxDD" class="text-2xl font-black text-rose-400 mt-1">-$240.00</div>
+          <div id="kpiMaxDDPct" class="text-[11px] text-rose-400 mt-1">0.48% of Daily Capital</div>
+        </div>
+        <div class="card-dark p-4 rounded-xl">
+          <div class="text-gray-400 text-xs uppercase font-medium">Avg Win / Loss</div>
+          <div id="kpiAvgWinLoss" class="text-xl font-black text-amber-400 mt-1">+$124 / -$58</div>
+          <div class="text-[11px] text-gray-400 mt-1">Reward / Risk: 2.15x</div>
+        </div>
+      </div>
+
+      <!-- Charts & Daily Reality Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Equity Curve (2 Cols) -->
+        <div class="lg:col-span-2 card-dark p-6 rounded-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                <span>📈 Portfolio Cumulative Profit Curve</span>
+                <span id="badgeEndingBalance" class="text-xs px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">+$12,634.11 Net P&L</span>
+              </h3>
+              <p class="text-xs text-gray-400">Cumulative net dollar profit progression under strict intraday cash allocation</p>
+            </div>
+          </div>
+          <div class="h-72">
+            <canvas id="chartEquity"></canvas>
+          </div>
+        </div>
+
+        <!-- Daily Reality Distribution (1 Col) -->
+        <div class="card-dark p-6 rounded-2xl flex flex-col justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white mb-1">📅 Daily Execution Reality</h3>
+            <p class="text-xs text-gray-400 mb-4">Real trading day setup distribution</p>
+
+            <div class="space-y-2 text-xs" id="dailyDistContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-gray-800 mt-4 text-[11px] text-gray-400">
+            💡 <strong class="text-emerald-400">Capital Protection:</strong> Average dollar risk is only <span id="spanAvgRisk" class="font-bold text-white">$97.31</span> per position due to the tight Silent Candle stop.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Performance Attribution & Win Breakdown (Short/Long, Sectors, Levels, Stock Criteria) -->
+      <div class="card-dark p-6 rounded-2xl space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-gray-800 gap-3">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+              <span>🔬 Performance Attribution & Win Breakdown</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">Statistical Edge</span>
+            </h3>
+            <p class="text-xs text-gray-400 mt-0.5">Win rates, realized P&L, and profit factors segmented by direction, sector, structural level, and stock criteria.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 bg-gray-900/90 p-1 rounded-xl border border-gray-800 text-xs">
+            <button type="button" onclick="switchBreakdownTab('direction')" id="btnBdDirection" class="px-3 py-1.5 rounded-lg font-bold bg-sky-600 text-white transition">Short vs Long</button>
+            <button type="button" onclick="switchBreakdownTab('sector')" id="btnBdSector" class="px-3 py-1.5 rounded-lg font-bold text-gray-400 hover:text-white transition">Sectors</button>
+            <button type="button" onclick="switchBreakdownTab('level')" id="btnBdLevel" class="px-3 py-1.5 rounded-lg font-bold text-gray-400 hover:text-white transition">Key Levels (RH/FH/RL/FL)</button>
+            <button type="button" onclick="switchBreakdownTab('criteria')" id="btnBdCriteria" class="px-3 py-1.5 rounded-lg font-bold text-gray-400 hover:text-white transition">R:R & Beta Criteria</button>
+          </div>
+        </div>
+
+        <!-- 1. Direction Breakdown View -->
+        <div id="bdViewDirection" class="space-y-4">
+          <div id="bdDirectionCards" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- 2. Sector Breakdown View -->
+        <div id="bdViewSector" class="hidden space-y-4">
+          <div class="overflow-x-auto rounded-xl border border-gray-800">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-gray-900 text-gray-400 font-mono text-[11px]">
+                <tr>
+                  <th class="py-2.5 px-3">Sector</th>
+                  <th class="py-2.5 px-3 text-center">Trades</th>
+                  <th class="py-2.5 px-3 text-center">Wins</th>
+                  <th class="py-2.5 px-3 text-center">Losses</th>
+                  <th class="py-2.5 px-3 text-center">Win Rate %</th>
+                  <th class="py-2.5 px-3 text-center">Profit Factor</th>
+                  <th class="py-2.5 px-3 text-right">Net R</th>
+                  <th class="py-2.5 px-3 text-right">Net Profit ($)</th>
+                </tr>
+              </thead>
+              <tbody id="bdSectorTableBody" class="divide-y divide-gray-800/80 font-mono">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Key Levels Breakdown View -->
+        <div id="bdViewLevel" class="hidden space-y-4">
+          <div class="overflow-x-auto rounded-xl border border-gray-800">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-gray-900 text-gray-400 font-mono text-[11px]">
+                <tr>
+                  <th class="py-2.5 px-3">Tested Level</th>
+                  <th class="py-2.5 px-3 text-center">Direction</th>
+                  <th class="py-2.5 px-3 text-center">Trades</th>
+                  <th class="py-2.5 px-3 text-center">Wins</th>
+                  <th class="py-2.5 px-3 text-center">Losses</th>
+                  <th class="py-2.5 px-3 text-center">Win Rate %</th>
+                  <th class="py-2.5 px-3 text-center">Profit Factor</th>
+                  <th class="py-2.5 px-3 text-right">Net R</th>
+                  <th class="py-2.5 px-3 text-right">Net Profit ($)</th>
+                </tr>
+              </thead>
+              <tbody id="bdLevelTableBody" class="divide-y divide-gray-800/80 font-mono">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. Other Criteria Breakdown View (Planned R:R, Beta, Exit Reason) -->
+        <div id="bdViewCriteria" class="hidden space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Planned R:R Tiers -->
+            <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800 space-y-3">
+              <div class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                <span>🎯</span><span>Planned R:R Thresholds</span>
+              </div>
+              <div id="bdRRTierContainer" class="space-y-2 text-xs">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Stock Beta Tiers -->
+            <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800 space-y-3">
+              <div class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center space-x-1.5">
+                <span>⚡</span><span>Stock Beta / Volatility</span>
+              </div>
+              <div id="bdBetaContainer" class="space-y-2 text-xs">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Exit Reason Breakdown -->
+            <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800 space-y-3">
+              <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+                <span>🚪</span><span>Trade Exit Execution</span>
+              </div>
+              <div id="bdExitContainer" class="space-y-2 text-xs">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Monthly Performance Table -->
+      <div class="card-dark p-6 rounded-2xl">
+        <h3 class="text-base font-bold text-white mb-1">🗓️ Monthly Return Breakdown</h3>
+        <p class="text-xs text-gray-400 mb-4">Performance across each month of the backtested period</p>
+        <div class="overflow-x-auto rounded-xl border border-gray-800">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-gray-900 text-gray-400 font-mono text-[11px]">
+              <tr>
+                <th class="py-2.5 px-3">Month</th>
+                <th class="py-2.5 px-3 text-center">Trades</th>
+                <th class="py-2.5 px-3 text-center">Wins</th>
+                <th class="py-2.5 px-3 text-center">Losses</th>
+                <th class="py-2.5 px-3 text-center">Win Rate %</th>
+                <th class="py-2.5 px-3 text-right">Net R</th>
+                <th class="py-2.5 px-3 text-right">Net Dollar Profit ($)</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyTableBody" class="divide-y divide-gray-800/80 font-mono">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Master Trades Explorer Table with View Chart Buttons -->
+      <div class="card-dark p-6 rounded-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>📋 Executed Trades Explorer</span>
+              <span id="tradesCountBadge" class="text-xs px-2.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 font-mono">176 Trades</span>
+            </h3>
+            <p class="text-xs text-gray-400">Click any row or the <strong>"View Chart"</strong> button to inspect the 15-minute candlestick chart</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input type="text" id="tradesSearch" placeholder="Search ticker, date, level..." oninput="renderTradesTable()"
+                   class="px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-xs text-gray-200 focus:outline-none focus:border-sky-500 w-52">
+            <select id="pageSizeSelect" onchange="changePageSize()" class="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-200">
+              <option value="25">25 / page</option>
+              <option value="50" selected>50 / page</option>
+              <option value="100">100 / page</option>
+              <option value="ALL">All Trades</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-[580px] border border-gray-800 rounded-xl">
+          <table class="w-full text-xs text-left text-gray-300 border-collapse">
+            <thead class="text-gray-400 uppercase bg-gray-900/95 sticky top-0 border-b border-gray-800 z-10 font-mono text-[11px] select-none">
+              <tr>
+                <th onclick="handleSort('trade_id')" class="py-2.5 px-3 cursor-pointer hover:text-white transition" title="Sort by Trade ID">
+                  <div class="flex items-center space-x-1"><span>#</span><span id="si_trade_id" class="text-[9px] text-sky-400 font-bold">▲</span></div>
+                </th>
+                <th onclick="handleSort('ticker')" class="py-2.5 px-3 cursor-pointer hover:text-white transition" title="Sort by Stock Symbol">
+                  <div class="flex items-center space-x-1"><span>Ticker</span><span id="si_ticker" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('date')" class="py-2.5 px-3 cursor-pointer hover:text-white transition" title="Sort by Execution Date">
+                  <div class="flex items-center space-x-1"><span>Date</span><span id="si_date" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('sector')" class="py-2.5 px-3 cursor-pointer hover:text-white transition" title="Sort by Market Sector">
+                  <div class="flex items-center space-x-1"><span>Sector</span><span id="si_sector" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('direction')" class="py-2.5 px-3 text-center cursor-pointer hover:text-white transition" title="Sort by Direction (SHORT/LONG)">
+                  <div class="flex items-center justify-center space-x-1"><span>Dir</span><span id="si_direction" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('tested_level')" class="py-2.5 px-3 cursor-pointer hover:text-white transition" title="Sort by Tested Level (RH/FH/RL/FL)">
+                  <div class="flex items-center space-x-1"><span>Level</span><span id="si_tested_level" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('planned_rr')" class="py-2.5 px-3 text-right cursor-pointer hover:text-white transition" title="Sort by Planned Reward/Risk">
+                  <div class="flex items-center justify-end space-x-1"><span>R:R</span><span id="si_planned_rr" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('entry_price')" class="py-2.5 px-3 text-right cursor-pointer hover:text-white transition" title="Sort by Entry Price">
+                  <div class="flex items-center justify-end space-x-1"><span>Entry</span><span id="si_entry_price" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('stop_loss')" class="py-2.5 px-3 text-right cursor-pointer hover:text-white transition" title="Sort by Stop Loss Price">
+                  <div class="flex items-center justify-end space-x-1"><span>Stop</span><span id="si_stop_loss" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('target_profit')" class="py-2.5 px-3 text-right cursor-pointer hover:text-white transition" title="Sort by Target Profit Price">
+                  <div class="flex items-center justify-end space-x-1"><span>Target</span><span id="si_target_profit" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('exit_price')" class="py-2.5 px-3 text-right cursor-pointer hover:text-white transition" title="Sort by Exit Price">
+                  <div class="flex items-center justify-end space-x-1"><span>Exit</span><span id="si_exit_price" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('outcome')" class="py-2.5 px-3 text-center cursor-pointer hover:text-white transition" title="Sort by Outcome (WIN/LOSS)">
+                  <div class="flex items-center justify-center space-x-1"><span>Outcome</span><span id="si_outcome" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('r_multiple')" class="py-2.5 px-3 text-right cursor-pointer hover:text-white transition" title="Sort by Realized Net R Multiple">
+                  <div class="flex items-center justify-end space-x-1"><span>Net R</span><span id="si_r_multiple" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th onclick="handleSort('dollar_pnl')" class="py-2.5 px-3 text-right cursor-pointer hover:text-white transition" title="Sort by Realized Dollar P&L">
+                  <div class="flex items-center justify-end space-x-1"><span>Dollar P&L</span><span id="si_dollar_pnl" class="text-[9px] text-gray-500">↕</span></div>
+                </th>
+                <th class="py-2.5 px-3 text-center">Candlestick Chart</th>
+              </tr>
+            </thead>
+            <tbody id="tradesTableBody" class="divide-y divide-gray-800/60 font-mono text-xs">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex items-center justify-between mt-4 text-xs text-gray-400">
+          <div id="pageInfoText">Showing 1 to 50 of 176 trades</div>
+          <div class="flex items-center space-x-2">
+            <button onclick="prevPage()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded border border-gray-700">Previous</button>
+            <span id="pageSpan" class="px-2 font-bold text-white">1</span>
+            <button onclick="nextPage()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded border border-gray-700">Next</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- TRADE INSPECTOR MODAL POPUP (EMBEDDED CANDLESTICK CHART) -->
+  <!-- ========================================================================= -->
+  <div id="tradeModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 md:p-6 hidden">
+    <div class="card-dark max-w-4xl w-full max-h-[92vh] overflow-y-auto rounded-2xl border border-sky-500/50 shadow-2xl p-5 md:p-7 relative">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold bg-gray-800/80 hover:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center transition">✕</button>
+      <div id="modalContent">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Application Controller -->
+  <script>
+    let activeTab = 'studio';
+    let currentResults = null;
+    let chartEquityInstance = null;
+    let currentPage = 1;
+    let pageSize = 50;
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById('viewGuide').classList.add('hidden');
+      document.getElementById('viewStudio').classList.add('hidden');
+      document.getElementById('viewDashboard').classList.add('hidden');
+
+      document.getElementById('tabGuideBtn').classList.remove('active');
+      document.getElementById('tabStudioBtn').classList.remove('active');
+      document.getElementById('tabDashboardBtn').classList.remove('active');
+
+      if (tab === 'guide') {
+        document.getElementById('viewGuide').classList.remove('hidden');
+        document.getElementById('tabGuideBtn').classList.add('active');
+      } else if (tab === 'studio') {
+        document.getElementById('viewStudio').classList.remove('hidden');
+        document.getElementById('tabStudioBtn').classList.add('active');
+      } else if (tab === 'dashboard') {
+        document.getElementById('viewDashboard').classList.remove('hidden');
+        document.getElementById('tabDashboardBtn').classList.add('active');
+      }
+    }
+
+    function toggleCustomUniverse() {
+      const val = document.getElementById('cfgUniverse').value;
+      const container = document.getElementById('customUniverseContainer');
+      if (val === 'custom') {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    function toggleCustomDates() {
+      const val = document.getElementById('cfgTimeRange').value;
+      const container = document.getElementById('customDatesContainer');
+      const note = document.getElementById('timeRangeNote');
+      if (val === 'custom') {
+        container.classList.remove('hidden');
+        note.innerHTML = '<span class="text-amber-400">📅 Select custom dates within the available database window (2026-04-16 to 2026-10-06).</span>';
+      } else {
+        container.classList.add('hidden');
+        if (val === '6m') {
+          note.innerHTML = '<span class="text-emerald-400">⚡ Full 6-month historical sample (120 trading days: Apr 16 – Oct 6, 2026).</span>';
+        } else if (val === '3m') {
+          note.innerHTML = '<span class="text-sky-400">📅 Slicing to the most recent 66 trading days (Jul 6 – Oct 6, 2026).</span>';
+        } else if (val === '1m') {
+          note.innerHTML = '<span class="text-sky-400">📅 Slicing to the most recent 21 trading days (Sep 6 – Oct 6, 2026).</span>';
+        } else {
+          note.innerHTML = '<span class="text-gray-400">Full intraday 15-minute resolution across selected period.</span>';
+        }
+      }
+    }
+
+    async function handleRunBacktest(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnRunBacktest');
+      const spinner = document.getElementById('btnSpinner');
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+
+      const payload = {
+        strategy_id: document.getElementById('cfgStrategy').value,
+        universe: document.getElementById('cfgUniverse').value,
+        custom_tickers: document.getElementById('cfgCustomTickers').value,
+        time_range: document.getElementById('cfgTimeRange').value,
+        start_date: document.getElementById('cfgStartDate') ? document.getElementById('cfgStartDate').value : null,
+        end_date: document.getElementById('cfgEndDate') ? document.getElementById('cfgEndDate').value : null,
+        daily_capital: parseFloat(document.getElementById('cfgDailyCapital').value),
+        max_trades_per_day: parseInt(document.getElementById('cfgMaxTrades').value),
+        max_monitor_stocks: parseInt(document.getElementById('cfgMaxMonitor').value),
+        direction_filter: document.getElementById('cfgDirection').value,
+        min_planned_rr: parseFloat(document.getElementById('cfgMinRR').value)
+      };
+
+      try {
+        const res = await fetch('/api/backtest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          alert('Backtest Error: ' + (err.detail || 'Failed to run simulation'));
+          return;
+        }
+
+        const data = await res.json();
+        currentResults = data;
+        renderDashboard(data);
+        switchTab('dashboard');
+      } catch (err) {
+        alert('Request failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+      }
+    }
+
+    function renderDashboard(data) {
+      document.getElementById('resultsEmptyState').classList.add('hidden');
+      document.getElementById('resultsContent').classList.remove('hidden');
+
+      const res = data.results;
+      const s = res.summary;
+
+      const timeLabels = {
+        '6m': '6 Months (Full Sample: Apr–Oct 2026)',
+        '3m': '3 Months (Jul–Oct 2026)',
+        '1m': '1 Month (Sep–Oct 2026)',
+        'custom': 'Custom Date Range'
+      };
+      const timeStr = timeLabels[data.time_range] || data.time_range || '6 Months';
+
+      const fmtDate = (dStr) => (dStr && dStr.length === 8) ? `${dStr.slice(0,4)}-${dStr.slice(4,6)}-${dStr.slice(6,8)}` : (dStr || '');
+      const dateSpan = (s.start_date && s.end_date) 
+        ? `${fmtDate(s.start_date)} to ${fmtDate(s.end_date)}` 
+        : '2026-04-16 to 2026-10-06';
+
+      let periodNoticeHtml = '';
+      if (data.is_date_capped) {
+        periodNoticeHtml = `<span class="bg-amber-950/90 text-amber-300 border border-amber-800/80 px-2 py-0.5 rounded text-[10px] ml-1.5 font-sans font-semibold inline-block">ℹ️ Capped to 120 Available Intraday Days</span>`;
+      }
+
+      document.getElementById('resStrategyTitle').innerText = `${data.strategy.name} — Portfolio Backtest`;
+      document.getElementById('resSubtitle').innerHTML = 
+        `Universe: <strong class="text-white">${data.universe.id}</strong> (${data.universe.tickers_count} tickers) • Period: <strong class="text-white">${timeStr}</strong> (${s.total_trading_days || 120} Trading Days: ${dateSpan}) • Max ${s.max_trades_per_day} Pos/Day • $${s.daily_capital.toLocaleString()} Capital/Day${periodNoticeHtml}`;
+
+      // KPIs
+      document.getElementById('kpiNetProfit').innerText = `${s.net_profit >= 0 ? '+' : ''}$${s.net_profit.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById('kpiNetProfit').className = `text-2xl font-black mt-1 ${s.net_profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      document.getElementById('kpiTotalR').innerText = `${s.total_r >= 0 ? '+' : ''}${s.total_r.toFixed(2)} R Multiple`;
+      document.getElementById('kpiRetDeployed').innerText = `${s.return_on_deployed_pct >= 0 ? '+' : ''}${s.return_on_deployed_pct.toFixed(2)}%`;
+      document.getElementById('kpiRetAnn').innerText = `~${(s.return_on_deployed_pct * 2).toFixed(1)}% Annualized`;
+
+      document.getElementById('kpiWinRate').innerText = `${s.win_rate.toFixed(1)}%`;
+      document.getElementById('kpiWinsLosses').innerText = `${s.wins}W / ${s.losses}L / ${s.breakevens}BE`;
+
+      document.getElementById('kpiProfitFactor').innerText = s.profit_factor >= 999 ? '∞' : s.profit_factor.toFixed(2);
+      document.getElementById('kpiMaxDD').innerText = `-$${s.max_drawdown.toFixed(2)}`;
+      document.getElementById('kpiMaxDDPct').innerText = `${s.max_dd_pct.toFixed(2)}% of Daily Capital`;
+
+      document.getElementById('kpiAvgWinLoss').innerText = `+$${s.avg_win.toFixed(0)} / -$${Math.abs(s.avg_loss).toFixed(0)}`;
+      document.getElementById('badgeEndingBalance').innerText = `${s.net_profit >= 0 ? '+' : ''}$${s.net_profit.toLocaleString(undefined, {minimumFractionDigits: 2})} Cumulative P&L`;
+      document.getElementById('spanAvgRisk').innerText = `$${s.avg_risk_per_trade.toFixed(2)}`;
+
+      // Daily Distribution
+      const distContainer = document.getElementById('dailyDistContainer');
+      const dist = res.daily_distribution;
+      distContainer.innerHTML = Object.entries(dist).map(([count, days]) => `
+        <div class="flex items-center justify-between p-2 rounded ${count === '0' ? 'bg-gray-900/60' : 'bg-gray-900/80 border border-gray-800'}">
+          <span class="text-gray-400">${count === '0' ? '0 Trades (Quiet / Trend Days):' : count + ' Trades Executed:'}</span>
+          <span class="font-bold font-mono ${count == s.max_trades_per_day ? 'text-emerald-400' : 'text-white'}">${days} days</span>
+        </div>
+      `).join('');
+
+      // Monthly Table
+      const mBody = document.getElementById('monthlyTableBody');
+      mBody.innerHTML = res.monthly_performance.map(m => `
+        <tr class="hover:bg-gray-800/40">
+          <td class="py-2 px-3 font-bold text-gray-200">${m.month}</td>
+          <td class="py-2 px-3 text-center text-gray-400">${m.trades}</td>
+          <td class="py-2 px-3 text-center text-emerald-400">${m.wins}</td>
+          <td class="py-2 px-3 text-center text-rose-400">${m.losses}</td>
+          <td class="py-2 px-3 text-center font-bold text-emerald-400">${m.win_rate}%</td>
+          <td class="py-2 px-3 text-right text-gray-300">${m.total_r >= 0 ? '+' : ''}${m.total_r.toFixed(2)} R</td>
+          <td class="py-2 px-3 text-right font-bold ${m.net_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+            ${m.net_pnl >= 0 ? '+' : ''}$${m.net_pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}
+          </td>
+        </tr>
+      `).join('');
+
+      // Render Equity Curve Chart
+      renderEquityChart(res.equity_curve);
+
+      // Render Performance Breakdowns
+      renderBreakdowns(res.breakdowns);
+
+      // Render Table
+      currentPage = 1;
+      renderTradesTable();
+    }
+
+    let currentBreakdownTab = 'direction';
+    function switchBreakdownTab(tab) {
+      currentBreakdownTab = tab;
+      const tabs = ['direction', 'sector', 'level', 'criteria'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('btnBd' + t.charAt(0).toUpperCase() + t.slice(1));
+        const view = document.getElementById('bdView' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+          btn.className = "px-3 py-1.5 rounded-lg font-bold bg-sky-600 text-white transition shadow";
+          view.classList.remove('hidden');
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg font-bold text-gray-400 hover:text-white transition";
+          view.classList.add('hidden');
+        }
+      });
+    }
+
+    function renderBreakdowns(b) {
+      if (!b) return;
+
+      // 1. Direction Breakdown Cards
+      const dirCards = document.getElementById('bdDirectionCards');
+      if (b.direction && b.direction.length > 0) {
+        dirCards.innerHTML = b.direction.map(d => {
+          const isShort = d.direction === 'SHORT';
+          const isPositive = d.net_pnl >= 0;
+          return `
+            <div class="card-darker p-5 rounded-2xl border ${isShort ? 'border-sky-800/60' : 'border-amber-800/60'} relative overflow-hidden">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <span class="px-2.5 py-1 rounded text-xs font-bold ${isShort ? 'bg-sky-950 text-sky-400 border border-sky-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                    ${isShort ? '📉 SHORT TRADES' : '📈 LONG TRADES'}
+                  </span>
+                  <span class="text-xs text-gray-400">${isShort ? 'Fading Resistance (RH / FH)' : 'Buying Support (RL / FL)'}</span>
+                </div>
+                <span class="text-xs font-mono font-bold ${d.win_rate >= 50 ? 'text-emerald-400' : 'text-rose-400'}">
+                  ${d.win_rate}% Win Rate
+                </span>
+              </div>
+
+              <!-- Win Rate Progress Bar -->
+              <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden mb-4">
+                <div class="h-full ${d.win_rate >= 50 ? 'bg-emerald-500' : 'bg-rose-500'}" style="width: ${Math.min(100, d.win_rate)}%"></div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                <div class="bg-gray-900/80 p-2.5 rounded-lg border border-gray-800">
+                  <span class="text-gray-400 block text-[10px] uppercase">Trades</span>
+                  <span class="font-bold text-white text-sm">${d.trades} (${d.wins}W / ${d.losses}L)</span>
+                </div>
+                <div class="bg-gray-900/80 p-2.5 rounded-lg border border-gray-800">
+                  <span class="text-gray-400 block text-[10px] uppercase">Net Profit</span>
+                  <span class="font-bold text-sm ${isPositive ? 'text-emerald-400' : 'text-rose-400'}">
+                    ${isPositive ? '+' : ''}$${d.net_pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                  </span>
+                </div>
+                <div class="bg-gray-900/80 p-2.5 rounded-lg border border-gray-800">
+                  <span class="text-gray-400 block text-[10px] uppercase">Total Return (R)</span>
+                  <span class="font-bold text-sm ${d.total_r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                    ${d.total_r >= 0 ? '+' : ''}${d.total_r.toFixed(2)} R
+                  </span>
+                </div>
+                <div class="bg-gray-900/80 p-2.5 rounded-lg border border-gray-800">
+                  <span class="text-gray-400 block text-[10px] uppercase">Profit Factor</span>
+                  <span class="font-bold text-sm ${d.profit_factor >= 1.5 ? 'text-emerald-400' : (d.profit_factor >= 1.0 ? 'text-amber-400' : 'text-rose-400')}">
+                    ${d.profit_factor >= 999 ? '∞' : d.profit_factor.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        dirCards.innerHTML = '<div class="text-xs text-gray-500 italic p-4 text-center">No trades available for direction breakdown.</div>';
+      }
+
+      // 2. Sector Breakdown Table
+      const secBody = document.getElementById('bdSectorTableBody');
+      if (b.sector && b.sector.length > 0) {
+        secBody.innerHTML = b.sector.map(s => `
+          <tr class="hover:bg-gray-800/40 transition">
+            <td class="py-2 px-3 font-bold text-white flex items-center space-x-1.5">
+              <span>🏢</span><span>${s.sector}</span>
+            </td>
+            <td class="py-2 px-3 text-center text-gray-300 font-mono">${s.trades}</td>
+            <td class="py-2 px-3 text-center text-emerald-400 font-mono">${s.wins}</td>
+            <td class="py-2 px-3 text-center text-rose-400 font-mono">${s.losses}</td>
+            <td class="py-2 px-3 text-center font-mono font-bold ${s.win_rate >= 55 ? 'text-emerald-400' : (s.win_rate >= 50 ? 'text-amber-400' : 'text-rose-400')}">
+              ${s.win_rate}%
+            </td>
+            <td class="py-2 px-3 text-center font-mono font-bold ${s.profit_factor >= 1.5 ? 'text-emerald-400' : (s.profit_factor >= 1.0 ? 'text-amber-400' : 'text-rose-400')}">
+              ${s.profit_factor >= 999 ? '∞' : s.profit_factor.toFixed(2)}
+            </td>
+            <td class="py-2 px-3 text-right font-mono font-bold ${s.total_r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+              ${s.total_r >= 0 ? '+' : ''}${s.total_r.toFixed(2)} R
+            </td>
+            <td class="py-2 px-3 text-right font-mono font-bold ${s.net_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+              ${s.net_pnl >= 0 ? '+' : ''}$${s.net_pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        secBody.innerHTML = '<tr><td colspan="8" class="text-xs text-gray-500 italic p-4 text-center">No sector data.</td></tr>';
+      }
+
+      // 3. Level Breakdown Table
+      const lvlBody = document.getElementById('bdLevelTableBody');
+      if (b.level && b.level.length > 0) {
+        lvlBody.innerHTML = b.level.map(l => {
+          const lvlNames = {
+            'RH': 'Range High (Prior Day High Resistance)',
+            'FH': 'Flip High (Prior 30-Day Broken Resistance)',
+            'RL': 'Range Low (Prior Day Low Support)',
+            'FL': 'Flip Low (Prior 30-Day Support Demand)'
+          };
+          return `
+            <tr class="hover:bg-gray-800/40 transition">
+              <td class="py-2 px-3 font-bold text-white">
+                <span class="px-2 py-0.5 rounded font-mono text-xs ${l.tested_level === 'RH' ? 'bg-amber-950 text-amber-400 border border-amber-800' : (l.tested_level === 'FH' ? 'bg-rose-950 text-rose-400 border border-rose-800' : (l.tested_level === 'RL' ? 'bg-sky-950 text-sky-400 border border-sky-800' : 'bg-indigo-950 text-indigo-400 border border-indigo-800'))}">
+                  ${l.tested_level}
+                </span>
+                <span class="text-[11px] text-gray-400 ml-2">${lvlNames[l.tested_level] || ''}</span>
+              </td>
+              <td class="py-2 px-3 text-center">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${l.direction === 'SHORT' ? 'bg-sky-950 text-sky-400' : 'bg-amber-950 text-amber-400'}">${l.direction}</span>
+              </td>
+              <td class="py-2 px-3 text-center text-gray-300 font-mono">${l.trades}</td>
+              <td class="py-2 px-3 text-center text-emerald-400 font-mono">${l.wins}</td>
+              <td class="py-2 px-3 text-center text-rose-400 font-mono">${l.losses}</td>
+              <td class="py-2 px-3 text-center font-mono font-bold ${l.win_rate >= 55 ? 'text-emerald-400' : (l.win_rate >= 50 ? 'text-amber-400' : 'text-rose-400')}">
+                ${l.win_rate}%
+              </td>
+              <td class="py-2 px-3 text-center font-mono font-bold ${l.profit_factor >= 1.5 ? 'text-emerald-400' : (l.profit_factor >= 1.0 ? 'text-amber-400' : 'text-rose-400')}">
+                ${l.profit_factor >= 999 ? '∞' : l.profit_factor.toFixed(2)}
+              </td>
+              <td class="py-2 px-3 text-right font-mono font-bold ${l.total_r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                ${l.total_r >= 0 ? '+' : ''}${l.total_r.toFixed(2)} R
+              </td>
+              <td class="py-2 px-3 text-right font-mono font-bold ${l.net_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                ${l.net_pnl >= 0 ? '+' : ''}$${l.net_pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        lvlBody.innerHTML = '<tr><td colspan="9" class="text-xs text-gray-500 italic p-4 text-center">No level data.</td></tr>';
+      }
+
+      // 4. Other Criteria (RR Tier, Beta, Exit Reason)
+      const rrContainer = document.getElementById('bdRRTierContainer');
+      if (b.rr_tier && b.rr_tier.length > 0) {
+        rrContainer.innerHTML = b.rr_tier.map(r => `
+          <div class="flex items-center justify-between p-2 rounded bg-gray-950 border border-gray-800 font-mono">
+            <div>
+              <span class="font-bold text-white block">${r.rr_tier}</span>
+              <span class="text-[10px] text-gray-400">${r.trades} trades • ${r.win_rate}% Win</span>
+            </div>
+            <div class="text-right">
+              <span class="font-bold block ${r.net_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${r.net_pnl >= 0 ? '+' : ''}$${r.net_pnl.toFixed(0)}</span>
+              <span class="text-[10px] text-gray-400">${r.total_r >= 0 ? '+' : ''}${r.total_r.toFixed(1)} R</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        rrContainer.innerHTML = '<div class="text-gray-500 italic text-xs">No R:R data.</div>';
+      }
+
+      const betaContainer = document.getElementById('bdBetaContainer');
+      if (b.beta_tier && b.beta_tier.length > 0) {
+        betaContainer.innerHTML = b.beta_tier.map(bt => `
+          <div class="flex items-center justify-between p-2 rounded bg-gray-950 border border-gray-800 font-mono">
+            <div>
+              <span class="font-bold text-white block">${bt.beta_tier}</span>
+              <span class="text-[10px] text-gray-400">${bt.trades} trades • ${bt.win_rate}% Win</span>
+            </div>
+            <div class="text-right">
+              <span class="font-bold block ${bt.net_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${bt.net_pnl >= 0 ? '+' : ''}$${bt.net_pnl.toFixed(0)}</span>
+              <span class="text-[10px] text-gray-400">${bt.total_r >= 0 ? '+' : ''}${bt.total_r.toFixed(1)} R</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        betaContainer.innerHTML = '<div class="text-gray-500 italic text-xs">No Beta data.</div>';
+      }
+
+      const exitContainer = document.getElementById('bdExitContainer');
+      if (b.exit_reason && b.exit_reason.length > 0) {
+        exitContainer.innerHTML = b.exit_reason.map(ex => `
+          <div class="flex items-center justify-between p-2 rounded bg-gray-950 border border-gray-800 font-mono">
+            <div>
+              <span class="font-bold text-white block">${ex.exit_reason}</span>
+              <span class="text-[10px] text-gray-400">${ex.trades} trades • ${ex.win_rate}% Win</span>
+            </div>
+            <div class="text-right">
+              <span class="font-bold block ${ex.net_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${ex.net_pnl >= 0 ? '+' : ''}$${ex.net_pnl.toFixed(0)}</span>
+              <span class="text-[10px] text-gray-400">${ex.total_r >= 0 ? '+' : ''}${ex.total_r.toFixed(1)} R</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        exitContainer.innerHTML = '<div class="text-gray-500 italic text-xs">No exit data.</div>';
+      }
+    }
+
+    function renderEquityChart(series) {
+      const ctx = document.getElementById('chartEquity').getContext('2d');
+      if (chartEquityInstance) {
+        chartEquityInstance.destroy();
+      }
+
+      chartEquityInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: series.map(p => `#${p.idx} (${p.ticker})`),
+          datasets: [{
+            label: 'Cumulative Profit ($)',
+            data: series.map(p => p.equity),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            fill: true,
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const pt = series[context.dataIndex];
+                  return `Cumulative P&L: ${pt.equity >= 0 ? '+' : ''}$${pt.equity.toFixed(2)} | Trade: ${pt.dollar_pnl >= 0 ? '+' : ''}$${pt.dollar_pnl.toFixed(2)} (${pt.date})`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', maxTicksLimit: 10 } },
+            y: {
+              grid: { color: '#1e293b' },
+              ticks: {
+                color: '#94a3b8',
+                callback: function(v) { return (v >= 0 ? '+$' : '-$') + Math.abs(v).toLocaleString(); }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    let sortCol = 'trade_id';
+    let sortAsc = true;
+
+    function handleSort(col) {
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        if (['r_multiple', 'dollar_pnl', 'planned_rr', 'return_pct', 'outcome'].includes(col)) {
+          sortAsc = false;
+        } else {
+          sortAsc = true;
+        }
+      }
+      currentPage = 1;
+      renderTradesTable();
+    }
+
+    function renderTradesTable() {
+      if (!currentResults) return;
+      const trades = currentResults.results.trades;
+      const query = document.getElementById('tradesSearch').value.toLowerCase().trim();
+
+      let list = trades.slice();
+      if (query) {
+        list = list.filter(t => 
+          t.ticker.toLowerCase().includes(query) ||
+          t.date_str.toLowerCase().includes(query) ||
+          t.sector.toLowerCase().includes(query) ||
+          t.tested_level.toLowerCase().includes(query) ||
+          t.direction.toLowerCase().includes(query)
+        );
+      }
+
+      // Sort list
+      list.sort((a, b) => {
+        let valA = a[sortCol];
+        let valB = b[sortCol];
+
+        if (sortCol === 'outcome') {
+          valA = a.dollar_pnl >= 0 ? 1 : 0;
+          valB = b.dollar_pnl >= 0 ? 1 : 0;
+        }
+
+        if (typeof valA === 'string') {
+          const comp = String(valA).localeCompare(String(valB));
+          return sortAsc ? comp : -comp;
+        } else {
+          valA = valA === undefined || valA === null ? 0 : Number(valA);
+          valB = valB === undefined || valB === null ? 0 : Number(valB);
+          return sortAsc ? (valA - valB) : (valB - valA);
+        }
+      });
+
+      // Update sort indicators
+      const sortCols = ['trade_id', 'ticker', 'date', 'sector', 'direction', 'tested_level', 'planned_rr', 'entry_price', 'stop_loss', 'target_profit', 'exit_price', 'outcome', 'r_multiple', 'dollar_pnl'];
+      sortCols.forEach(col => {
+        const el = document.getElementById('si_' + col);
+        if (el) {
+          if (col === sortCol) {
+            el.innerText = sortAsc ? '▲' : '▼';
+            el.className = 'text-[9px] text-sky-400 font-bold';
+            el.parentElement.parentElement.classList.add('text-sky-300');
+          } else {
+            el.innerText = '↕';
+            el.className = 'text-[9px] text-gray-600';
+            el.parentElement.parentElement.classList.remove('text-sky-300');
+          }
+        }
+      });
+
+      document.getElementById('tradesCountBadge').innerText = `${list.length.toLocaleString()} Trades`;
+
+      const actualPageSize = pageSize === 'ALL' ? list.length : parseInt(pageSize);
+      const totalPages = Math.max(1, Math.ceil(list.length / actualPageSize));
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIdx = (currentPage - 1) * actualPageSize;
+      const endIdx = pageSize === 'ALL' ? list.length : Math.min(startIdx + actualPageSize, list.length);
+      const pageSlice = list.slice(startIdx, endIdx);
+
+      document.getElementById('pageInfoText').innerText = `Showing ${list.length > 0 ? startIdx + 1 : 0} to ${endIdx} of ${list.length} trades`;
+      document.getElementById('pageSpan').innerText = `${currentPage} / ${totalPages}`;
+
+      const tbody = document.getElementById('tradesTableBody');
+      tbody.innerHTML = pageSlice.map(t => `
+        <tr class="hover:bg-gray-800/50 transition cursor-pointer" onclick="openModal(${t.trade_id})">
+          <td class="py-2.5 px-3 text-gray-500 font-mono">#${t.trade_id}</td>
+          <td class="py-2.5 px-3 font-bold text-white">${t.ticker}</td>
+          <td class="py-2.5 px-3 text-gray-400 font-mono text-[11px]">${t.date_str}</td>
+          <td class="py-2.5 px-3 text-gray-400 font-sans text-[11px] truncate max-w-[110px]">${t.sector}</td>
+          <td class="py-2.5 px-3 text-center">
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${t.direction === 'SHORT' ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-sky-950 text-sky-400 border border-sky-800'}">
+              ${t.direction}
+            </span>
+          </td>
+          <td class="py-2.5 px-3 font-bold text-gray-300 font-mono">${t.tested_level}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-gray-400">${t.planned_rr ? t.planned_rr.toFixed(2) : '1.50'}x</td>
+          <td class="py-2.5 px-3 text-right font-mono text-gray-300">$${t.entry_price.toFixed(2)}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-rose-400">$${t.stop_loss.toFixed(2)}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-emerald-400">$${t.target_profit.toFixed(2)}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-gray-300">$${t.exit_price.toFixed(2)}</td>
+          <td class="py-2.5 px-3 text-center">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${t.dollar_pnl >= 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'}">
+              ${t.dollar_pnl >= 0 ? 'WIN' : 'LOSS'}
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold ${t.r_multiple >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+            ${t.r_multiple >= 0 ? '+' : ''}${t.r_multiple.toFixed(2)} R
+          </td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold ${t.dollar_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+            ${t.dollar_pnl >= 0 ? '+' : ''}$${t.dollar_pnl.toFixed(2)}
+          </td>
+          <td class="py-2.5 px-3 text-center" onclick="event.stopPropagation()">
+            <button onclick="openModal(${t.trade_id})" class="px-2.5 py-1 rounded-lg bg-emerald-950 text-emerald-400 hover:bg-emerald-900 border border-emerald-800 text-[10px] font-bold flex items-center space-x-1 mx-auto shadow">
+              <span>📊</span><span>View Chart</span>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTradesTable();
+      }
+    }
+
+    function nextPage() {
+      if (!currentResults) return;
+      const trades = currentResults.results.trades;
+      const actualPageSize = pageSize === 'ALL' ? trades.length : parseInt(pageSize);
+      const totalPages = Math.ceil(trades.length / actualPageSize);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTradesTable();
+      }
+    }
+
+    function changePageSize() {
+      pageSize = document.getElementById('pageSizeSelect').value;
+      currentPage = 1;
+      renderTradesTable();
+    }
+
+    function openModal(tradeId) {
+      if (!currentResults) return;
+      const t = currentResults.results.trades.find(x => x.trade_id === tradeId);
+      if (!t) return;
+
+      const modal = document.getElementById('tradeModal');
+      const content = document.getElementById('modalContent');
+
+      // Dynamically formulate chart API URL
+      const chartApiUrl = `/api/chart/${t.ticker}/${t.date}?level_price=${t.level_price || 0}&entry_price=${t.entry_price}&stop_loss=${t.stop_loss}&target_profit=${t.target_profit}&exit_price=${t.exit_price}&direction=${t.direction}&tested_level=${t.tested_level}&r_multiple=${t.r_multiple}&dollar_pnl=${t.dollar_pnl}&exit_reason=${t.exit_reason}`;
+
+      content.innerHTML = `
+        <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-2xl font-black text-white">${t.ticker}</span>
+              <span class="text-sm text-gray-400">(${t.company_name})</span>
+              <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-300 font-semibold">${t.sector}</span>
+            </div>
+            <div class="text-xs text-gray-400 font-mono mt-1">Trade #${t.trade_id} • Execution Date: ${t.date_str}</div>
+          </div>
+          <div class="text-right">
+            <span class="px-3.5 py-1.5 rounded-lg text-xs font-bold ${t.dollar_pnl >= 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'}">
+              ${t.dollar_pnl >= 0 ? '🟢 WIN (+ ' + t.r_multiple.toFixed(2) + ' R)' : '🔴 LOSS (' + t.r_multiple.toFixed(2) + ' R)'}
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+          <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800">
+            <div class="text-[10px] uppercase text-gray-400 font-semibold">Setup Level</div>
+            <div class="text-base font-bold text-sky-400 mt-0.5">${t.tested_level} (${t.direction})</div>
+          </div>
+          <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800">
+            <div class="text-[10px] uppercase text-gray-400 font-semibold">Planned Reward/Risk</div>
+            <div class="text-base font-bold text-amber-400 mt-0.5">${t.planned_rr ? t.planned_rr.toFixed(2) : '1.50'}x</div>
+          </div>
+          <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800">
+            <div class="text-[10px] uppercase text-gray-400 font-semibold">Return %</div>
+            <div class="text-base font-bold ${t.return_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5">${t.return_pct >= 0 ? '+' : ''}${t.return_pct.toFixed(2)}%</div>
+          </div>
+          <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800">
+            <div class="text-[10px] uppercase text-gray-400 font-semibold">Exit Reason</div>
+            <div class="text-xs font-bold text-gray-300 mt-1 font-mono">${t.exit_reason}</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-900/60 p-3.5 rounded-xl border border-gray-800 mb-4 text-xs font-mono">
+          <div>
+            <span class="text-gray-400 block text-[10px]">Entry Price:</span>
+            <span class="font-bold text-white text-sm">$${t.entry_price.toFixed(2)}</span>
+          </div>
+          <div>
+            <span class="text-rose-400 block text-[10px]">Stop Loss:</span>
+            <span class="font-bold text-rose-400 text-sm">$${t.stop_loss.toFixed(2)}</span>
+          </div>
+          <div>
+            <span class="text-emerald-400 block text-[10px]">Target Profit:</span>
+            <span class="font-bold text-emerald-400 text-sm">$${t.target_profit.toFixed(2)}</span>
+          </div>
+          <div>
+            <span class="text-gray-300 block text-[10px]">Exit Price:</span>
+            <span class="font-bold text-white text-sm">$${t.exit_price.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="bg-emerald-950/20 p-4 rounded-xl border border-emerald-800/40 mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+              💼 Real-World Cash Sizing:
+            </div>
+            <div class="text-[11px] text-gray-400 font-mono">
+              Position Value: $${(t.shares * t.entry_price).toLocaleString()}
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+            <div>
+              <span class="text-gray-400 block text-[10px]">Shares Traded:</span>
+              <span class="font-bold text-white">${t.shares} shares</span>
+            </div>
+            <div>
+              <span class="text-gray-400 block text-[10px]">Initial Dollar Risk:</span>
+              <span class="font-bold text-rose-400">$${t.dollar_risk.toFixed(2)}</span>
+            </div>
+            <div>
+              <span class="text-gray-400 block text-[10px]">Realized Dollar P&L:</span>
+              <span class="font-bold text-base ${t.dollar_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                ${t.dollar_pnl >= 0 ? '+' : ''}$${t.dollar_pnl.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Embedded Candlestick Chart -->
+        <div class="mt-4 pt-3 border-t border-gray-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>📊</span><span>15-Minute Multi-Day Candlestick Chart Execution</span>
+            </span>
+            <a href="${chartApiUrl}" target="_blank" class="text-xs text-sky-400 hover:text-sky-300 underline font-mono flex items-center space-x-1">
+              <span>Open Fullscreen</span><span>↗</span>
+            </a>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-gray-700 bg-gray-950 flex items-center justify-center p-1 shadow-2xl">
+            <img src="${chartApiUrl}" class="w-full h-auto rounded-lg" alt="${t.ticker} Trade Chart" 
+                 onerror="this.onerror=null; this.src='/static/charts/trade_port_${String(t.trade_id).padStart(3, '0')}_${t.ticker}_${t.date}.png'" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end pt-4 mt-2 border-t border-gray-800">
+          <button onclick="closeModal()" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg transition">
+            Close Inspector
+          </button>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('tradeModal').classList.add('hidden');
+    }
+
+    function exportCSV() {
+      if (!currentResults) return;
+      const trades = currentResults.results.trades;
+      const headers = ['Trade_ID', 'Ticker', 'Company', 'Date', 'Sector', 'Direction', 'Level', 'Planned_RR', 'Entry', 'Stop', 'Target', 'Exit', 'Outcome', 'Net_R', 'Return_Pct', 'Shares', 'Dollar_PnL'];
+      let csv = headers.join(',') + '\n';
+      trades.forEach(t => {
+        csv += `${t.trade_id},${t.ticker},"${t.company_name}",${t.date_str},"${t.sector}",${t.direction},${t.tested_level},${t.planned_rr || 1.5},${t.entry_price},${t.stop_loss},${t.target_profit},${t.exit_price},${t.dollar_pnl >= 0 ? 'WIN' : 'LOSS'},${t.r_multiple},${t.return_pct},${t.shares},${t.dollar_pnl}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `backtest_results_${currentResults.universe.id}.csv`);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Run default backtest automatically on load
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('btnRunBacktest').click();
+    });
+  </script>
+</body>
+</html>
