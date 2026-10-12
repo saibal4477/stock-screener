@@ -26,6 +26,32 @@ if os.path.exists(config.CHARTS_DIR):
 
 templates = Jinja2Templates(directory=os.path.join(config.BASE_DIR, "templates"))
 
+@app.on_event("startup")
+def download_gcs_database_if_configured():
+    bucket_name = os.environ.get("GCS_BUCKET_NAME")
+    if bucket_name and not os.path.exists(config.DB_PATH_15M):
+        try:
+            from google.cloud import storage
+            client = storage.Client()
+            bucket = client.bucket(bucket_name)
+            blob = bucket.blob("screener_core_15min.db")
+            if blob.exists():
+                print(f"Downloading screener_core_15min.db from gs://{bucket_name}...")
+                blob.download_to_filename(config.DB_PATH_15M)
+                config.ACTIVE_DB = config.DB_PATH_15M
+                print(f"Downloaded screener_core_15min.db ({os.path.getsize(config.DB_PATH_15M)} bytes)")
+            else:
+                blob_5m = bucket.blob("screener.db")
+                if blob_5m.exists():
+                    print(f"Downloading screener.db from gs://{bucket_name}...")
+                    blob_5m.download_to_filename(config.DB_PATH_5M)
+                    config.ACTIVE_DB = config.DB_PATH_5M
+                    print(f"Downloaded screener.db ({os.path.getsize(config.DB_PATH_5M)} bytes)")
+        except ImportError:
+            print("Notice: google-cloud-storage not installed, skipping GCS download.")
+        except Exception as e:
+            print(f"Warning: Could not download DB from GCS bucket '{bucket_name}': {e}")
+
 class BacktestRequest(BaseModel):
     strategy_id: str = "silent_flip"
     universe: str = "curated_30"  # 'curated_30', 'dow30', 'sp500', 'nasdaq100', 'custom'

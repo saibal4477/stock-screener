@@ -14,7 +14,16 @@ DB_PATH_5M = os.path.join(BASE_DIR, "screener.db")
 FALLBACK_DB_15M = r"C:\Users\saiba\.gemini\antigravity\scratch\mcp-stock-screener\screener_core_15min.db"
 FALLBACK_DB_5M = r"C:\Users\saiba\.gemini\antigravity\scratch\mcp-stock-screener\screener.db"
 
-if os.path.exists(DB_PATH_15M):
+# GCS Mount Support (Cloud Run Volume Mounts)
+GCS_MOUNT_DIR = os.environ.get("GCS_MOUNT_DIR", "/mnt/gcs")
+GCS_MOUNT_DB_15M = os.path.join(GCS_MOUNT_DIR, "screener_core_15min.db")
+GCS_MOUNT_DB_5M = os.path.join(GCS_MOUNT_DIR, "screener.db")
+
+if os.path.exists(GCS_MOUNT_DB_15M):
+    ACTIVE_DB = GCS_MOUNT_DB_15M
+elif os.path.exists(GCS_MOUNT_DB_5M):
+    ACTIVE_DB = GCS_MOUNT_DB_5M
+elif os.path.exists(DB_PATH_15M):
     ACTIVE_DB = DB_PATH_15M
 elif os.path.exists(DB_PATH_5M):
     ACTIVE_DB = DB_PATH_5M
