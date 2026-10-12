@@ -64,7 +64,7 @@
         </button>
         <button onclick="switchTab('live')" id="tabLiveBtn" class="tab-btn px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition flex items-center space-x-2 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 hover:from-amber-500/20 hover:to-emerald-500/20 text-amber-300 border border-amber-500/30">
           <span>⚡</span>
-          <span>4. Live Yahoo Screener</span>
+          <span>4. Today's Opportunities (After 30 Mins)</span>
         </button>
       </nav>
     </div>
@@ -276,10 +276,11 @@
           <div class="space-y-2">
             <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">2. Stock Universe</label>
             <select id="cfgUniverse" onchange="toggleCustomUniverse()" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="scope_all">🌟 S&amp;P 500 + Dow Jones + Nasdaq 100 (Full Scope ~515 Stocks)</option>
               <option value="curated_30" selected>🎯 Curated 30 High-Edge Stocks (Recommended)</option>
+              <option value="sp500">🌐 S&amp;P 500 (502 Stocks)</option>
+              <option value="nasdaq100">💻 Nasdaq 100 (100 Stocks)</option>
               <option value="dow30">🏛️ Dow Jones Industrial Average (30 Stocks)</option>
-              <option value="nasdaq100">💻 Nasdaq 100 (98 Stocks in DB)</option>
-              <option value="sp500">🌐 S&P 500 (502 Stocks)</option>
               <option value="custom">✏️ Custom Watchlist (Enter Tickers)</option>
             </select>
             <div id="customUniverseContainer" class="hidden mt-2">
@@ -766,16 +767,16 @@
             </span>
           </div>
           <h2 class="text-xl md:text-2xl font-black text-white mt-2 flex items-center space-x-2">
-            <span>⚡ Today's Market Intraday Opportunity Scanner</span>
+            <span>⚡ Today's Opportunities (Formed After 30 Minutes)</span>
           </h2>
           <p class="text-xs md:text-sm text-gray-400 mt-1">
-            Scans real-time 15-minute bars via Yahoo Finance to detect opening 30-minute range breakouts &amp; Silent Candle fader setups.
+            Strict Scope: <strong class="text-amber-400">S&amp;P 500 • Dow Jones 30 • Nasdaq 100</strong>. Evaluates 15-minute bars strictly after the opening 30 minutes (from 10:00 AM EST onward) for Silent Candle level fades.
           </p>
         </div>
         
         <div class="text-right">
           <div id="liveClockText" class="text-xs text-gray-400 font-mono">EST Time</div>
-          <div class="text-[11px] text-emerald-400 mt-1 font-semibold">Rule: Triggers strictly after 30-min opening range</div>
+          <div class="text-[11px] text-emerald-400 mt-1 font-semibold">Opening Range: 9:30–10:00 AM | Entry: ≥ 10:00 AM EST</div>
         </div>
       </div>
 
@@ -785,12 +786,13 @@
           
           <!-- 1. Stock Universe -->
           <div class="space-y-2">
-            <label class="text-xs font-bold text-amber-400 uppercase tracking-wider block">1. Universe to Scan</label>
+            <label class="text-xs font-bold text-amber-400 uppercase tracking-wider block">1. Universe Scope</label>
             <select id="liveUniverse" onchange="toggleCustomLiveUniverse()" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-amber-500">
-              <option value="curated_30" selected>🎯 Curated 30 High-Edge Stocks (Recommended)</option>
+              <option value="scope_all" selected>🌟 All In Scope: S&amp;P 500 + Dow Jones + Nasdaq 100 (~515 Stocks)</option>
+              <option value="sp500">🌐 S&amp;P 500 Index (502 Stocks)</option>
+              <option value="nasdaq100">💻 Nasdaq 100 Index (100 Stocks)</option>
               <option value="dow30">🏛️ Dow Jones Industrial Average (30 Stocks)</option>
-              <option value="nasdaq100">💻 Nasdaq 100 Leaders</option>
-              <option value="sp500">🌐 S&amp;P 500 Top Liquid Leaders (60 Stocks)</option>
+              <option value="curated_30">🎯 Curated 30 High-Edge Stocks (Recommended)</option>
               <option value="custom">✏️ Custom Watchlist (Enter Tickers)</option>
             </select>
             <div id="customLiveUniverseContainer" class="hidden mt-2">
@@ -798,7 +800,7 @@
                      class="w-full bg-gray-950 border border-amber-700 rounded-lg p-2 text-xs text-white">
             </div>
             <p class="text-[11px] text-gray-400 leading-tight">
-              Scans 15-minute bars live across the selected basket.
+              Scans all components across S&amp;P 500, Dow 30, and Nasdaq 100.
             </p>
           </div>
 

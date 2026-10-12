@@ -83,9 +83,9 @@ def api_scan_live(req: LiveScanRequest):
     tickers = get_universe_tickers(req.universe, req.custom_tickers)
     if not tickers:
         raise HTTPException(status_code=400, detail="No tickers resolved for selected universe")
-    # Cap to top 60 to prevent Yahoo Finance rate limits
-    if len(tickers) > 60:
-        tickers = tickers[:60]
+    # Scan up to 550 tickers (covers entire S&P 500 + Dow 30 + Nasdaq 100 universe)
+    if len(tickers) > 550:
+        tickers = tickers[:550]
     return scan_live_market(
         tickers=tickers,
         direction_filter=req.direction_filter,
@@ -119,28 +119,34 @@ def api_get_strategy(strategy_id: str):
 def api_get_universes():
     return [
         {
-            "id": "curated_30",
-            "name": "🎯 Curated 30 High-Edge Stocks (Recommended)",
-            "description": "Top liquid defensive & financial components yielding 71% win rate on resistance fades",
-            "count": len(config.HIGH_EDGE_30)
+            "id": "scope_all",
+            "name": "🌟 S&P 500 + Dow Jones + Nasdaq 100 (Full Scope)",
+            "description": "Composite universe spanning broad large-caps, blue chips, and tech leaders",
+            "count": 515
+        },
+        {
+            "id": "sp500",
+            "name": "🌐 S&P 500 Index (502 Stocks)",
+            "description": "Broad US large-cap equity market benchmark",
+            "count": 502
+        },
+        {
+            "id": "nasdaq100",
+            "name": "💻 Nasdaq 100 Index (100 Stocks)",
+            "description": "Top non-financial growth & tech leaders",
+            "count": 100
         },
         {
             "id": "dow30",
             "name": "🏛️ Dow Jones Industrial Average (30 Stocks)",
-            "description": "30 institutional blue-chip components",
+            "description": "30 institutional blue-chip industrial components",
             "count": 30
         },
         {
-            "id": "nasdaq100",
-            "name": "💻 Nasdaq 100 (98 Stocks in DB)",
-            "description": "Top non-financial growth & tech stocks",
-            "count": 98
-        },
-        {
-            "id": "sp500",
-            "name": "🌐 S&P 500 Universe (502 Stocks)",
-            "description": "Broad US large-cap equity market",
-            "count": 502
+            "id": "curated_30",
+            "name": "🎯 Curated 30 High-Edge Stocks (Recommended)",
+            "description": "Top liquid defensive & financial components yielding 71% win rate on resistance fades",
+            "count": len(config.HIGH_EDGE_30)
         },
         {
             "id": "custom",

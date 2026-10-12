@@ -47,30 +47,43 @@ def scan_live_market(
     meta_map = get_company_metadata()
     clean_tickers = [t.strip().upper() for t in tickers if t.strip()]
 
-    # Download recent 5 days of 15m bars from Yahoo Finance
-    try:
-        data = yf.download(clean_tickers, period="5d", interval="15m", group_by="ticker", progress=False)
-    except Exception as e:
-        return {"status": "error", "message": f"Yahoo Finance download error: {str(e)}", "opportunities": []}
+    # Download recent 5 days of 15m bars from Yahoo Finance in batches of 60 to prevent URL overflow
+    dfs_by_ticker = {}
+    batch_size = 60
+    batches = [clean_tickers[i:i + batch_size] for i in range(0, len(clean_tickers), batch_size)]
 
-    if data is None or data.empty:
+    for batch in batches:
+        try:
+            b_data = yf.download(batch, period="5d", interval="15m", group_by="ticker", progress=False, threads=True)
+            if b_data is None or b_data.empty:
+                continue
+            if len(batch) == 1:
+                t = batch[0]
+                b_df = b_data.dropna().copy()
+                if not b_df.empty:
+                    dfs_by_ticker[t] = b_df
+            else:
+                if isinstance(b_data.columns, pd.MultiIndex):
+                    avail_tickers = set(b_data.columns.get_level_values(0))
+                    for t in batch:
+                        if t in avail_tickers:
+                            try:
+                                t_df = b_data[t].dropna().copy()
+                                if not t_df.empty:
+                                    dfs_by_ticker[t] = t_df
+                            except Exception:
+                                pass
+        except Exception:
+            continue
+
+    if not dfs_by_ticker:
         return {"status": "error", "message": "No intraday data returned from Yahoo Finance", "opportunities": []}
 
     setups = []
     scanned_dates = set()
 
-    for ticker in clean_tickers:
+    for ticker, df in dfs_by_ticker.items():
         try:
-            if len(clean_tickers) == 1:
-                df = data.dropna().copy()
-            else:
-                if ticker not in data.columns.levels[0]:
-                    continue
-                df = data[ticker].dropna().copy()
-
-            if df.empty:
-                continue
-
             # Ensure tz is Eastern
             if df.index.tz is None:
                 df.index = df.index.tz_localize('UTC').tz_convert('America/New_York')
