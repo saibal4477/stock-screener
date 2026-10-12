@@ -92,6 +92,18 @@ def api_scan_live(req: LiveScanRequest):
         min_planned_rr=req.min_planned_rr
     )
 
+@app.post("/api/admin/update_daily_closing")
+def api_update_daily_closing(universe: str = "scope_all", target_date: Optional[str] = None, upload_gcs: bool = True):
+    """
+    Automated daily closing bar updater for S&P 500, Dow Jones, and Nasdaq 100.
+    Triggered daily at 4:30 PM EST via Cloud Scheduler or local automation to update DB and GCS bucket.
+    """
+    from core.daily_updater import update_daily_closing_data
+    res = update_daily_closing_data(universe_id=universe, target_date=target_date, upload_gcs=upload_gcs)
+    if res.get("status") != "success":
+        raise HTTPException(status_code=500, detail=res.get("message", "Daily update failed"))
+    return res
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_index(request: Request):
     index_file = os.path.join(config.BASE_DIR, "templates", "index.html")
