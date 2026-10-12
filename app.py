@@ -219,4 +219,5 @@ def api_get_chart(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host=config.SERVER_HOST, port=config.SERVER_PORT, reload=True)
+    port = int(os.environ.get("PORT", config.SERVER_PORT))
+    uvicorn.run("app:app", host=config.SERVER_HOST, port=port, reload=False)
