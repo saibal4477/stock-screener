@@ -765,6 +765,10 @@
             <span id="liveSessionBadge" class="px-2.5 py-1 rounded-full bg-gray-900 text-gray-300 border border-gray-700 text-xs font-mono">
               Ready to Scan
             </span>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800 text-xs font-mono flex items-center space-x-1">
+              <span>🛡️</span>
+              <span id="liveCacheBadge">Rate-Limit Shield (5m TTL Cache)</span>
+            </span>
           </div>
           <h2 class="text-xl md:text-2xl font-black text-white mt-2 flex items-center space-x-2">
             <span>⚡ Today's Opportunities (Formed After 30 Minutes)</span>
@@ -1778,6 +1782,10 @@
       document.getElementById('kpiLiveUniverseCount').innerText = `Across ${data.scanned_tickers_count || 30} stocks scanned`;
       document.getElementById('kpiLiveDate').innerText = data.scanned_date || 'Today';
       document.getElementById('kpiLiveDateSub').innerText = data.market ? data.market.status_label : '15-min bars';
+
+      if (document.getElementById('liveCacheBadge') && data.cached_tickers_count !== undefined) {
+        document.getElementById('liveCacheBadge').innerText = `🛡️ ${data.cached_tickers_count} Cached (0 API calls) • ${data.fetched_tickers_count} Streamed`;
+      }
 
       if (ops.length > 0) {
         document.getElementById('kpiLiveTopRR').innerText = `${ops[0].planned_rr.toFixed(1)}x`;

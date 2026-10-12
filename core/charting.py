@@ -202,12 +202,22 @@ def generate_live_candlestick_chart(ticker: str, session_date: str, trade_info: 
     if os.path.exists(output_path):
         return True
 
-    import yfinance as yf
-
+    df_raw = None
     try:
-        df_raw = yf.download(ticker, period="5d", interval="15m", progress=False)
+        from core.live_screener import get_cached_bar, get_yf_session
+        cached = get_cached_bar(ticker)
+        if cached is not None and not cached.empty:
+            df_raw = cached.copy()
     except Exception:
-        return False
+        pass
+
+    if df_raw is None or df_raw.empty:
+        import yfinance as yf
+        try:
+            session = get_yf_session()
+            df_raw = yf.download(ticker, period="5d", interval="15m", progress=False, session=session)
+        except Exception:
+            return False
 
     if df_raw is None or df_raw.empty:
         return False

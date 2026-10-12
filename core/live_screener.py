@@ -30,6 +30,47 @@ def get_market_status() -> Dict[str, Any]:
         "status_label": status_str
     }
 
+import time
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
+
+# Global in-memory cache for 15-minute intraday bars (5-minute TTL)
+# Prevents Yahoo Finance 429 Rate Limiting across repeated scans and chart views
+_INTRA_BARS_CACHE: Dict[str, Dict[str, Any]] = {}
+CACHE_TTL_SECONDS = 300 # 5 minutes
+
+def get_cached_bar(ticker: str) -> Optional[pd.DataFrame]:
+    """Retrieve cached 15-minute DataFrame if still fresh (< 5 minutes)."""
+    item = _INTRA_BARS_CACHE.get(ticker.upper())
+    if item and (time.time() - item.get('ts', 0) < CACHE_TTL_SECONDS):
+        return item.get('df')
+    return None
+
+def set_cached_bar(ticker: str, df: pd.DataFrame):
+    """Store 15-minute DataFrame in cache with current timestamp."""
+    if df is not None and not df.empty:
+        _INTRA_BARS_CACHE[ticker.upper()] = {'df': df, 'ts': time.time()}
+
+def get_yf_session() -> requests.Session:
+    """Creates a resilient HTTP session with rotating browser headers and exponential backoff retry."""
+    session = requests.Session()
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
+    })
+    retries = Retry(
+        total=3,
+        backoff_factor=1.0,
+        status_forcelist=[429, 500, 502, 503, 504],
+        raise_on_status=False
+    )
+    adapter = HTTPAdapter(max_retries=retries, pool_connections=25, pool_maxsize=25)
+    session.mount('https://', adapter)
+    session.mount('http://', adapter)
+    return session
+
 def scan_live_market(
     tickers: List[str],
     direction_filter: str = "SHORTS_ONLY",
@@ -37,8 +78,8 @@ def scan_live_market(
     target_date: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Downloads live/recent 15-minute intraday bars via Yahoo Finance API,
-    establishes the 30-minute Opening Range (9:30 - 10:00 AM EST),
+    Downloads live/recent 15-minute intraday bars via Yahoo Finance API with rate-limit protection,
+    caches data in RAM (5-min TTL), establishes the 30-minute Opening Range (9:30 - 10:00 AM EST),
     and scans all subsequent candles (after 10:00 AM EST) for Silent Flip opportunities.
     """
     if not tickers:
@@ -47,37 +88,64 @@ def scan_live_market(
     meta_map = get_company_metadata()
     clean_tickers = [t.strip().upper() for t in tickers if t.strip()]
 
-    # Download recent 5 days of 15m bars from Yahoo Finance in batches of 60 to prevent URL overflow
-    dfs_by_ticker = {}
-    batch_size = 60
-    batches = [clean_tickers[i:i + batch_size] for i in range(0, len(clean_tickers), batch_size)]
+    dfs_by_ticker: Dict[str, pd.DataFrame] = {}
+    tickers_to_fetch: List[str] = []
 
-    for batch in batches:
-        try:
-            b_data = yf.download(batch, period="5d", interval="15m", group_by="ticker", progress=False, threads=True)
-            if b_data is None or b_data.empty:
+    # 1. Cache-first lookup: Reuse fresh bars to avoid hitting Yahoo Finance rate limits
+    for t in clean_tickers:
+        cached = get_cached_bar(t)
+        if cached is not None and not cached.empty:
+            dfs_by_ticker[t] = cached
+        else:
+            tickers_to_fetch.append(t)
+
+    # 2. Fetch remaining uncached tickers in polite batches
+    if tickers_to_fetch:
+        session = get_yf_session()
+        batch_size = 50
+        batches = [tickers_to_fetch[i:i + batch_size] for i in range(0, len(tickers_to_fetch), batch_size)]
+
+        for idx, batch in enumerate(batches):
+            try:
+                # Polite spacing between batches to prevent 429 throttling
+                if idx > 0:
+                    time.sleep(0.35)
+
+                b_data = yf.download(
+                    batch, 
+                    period="5d", 
+                    interval="15m", 
+                    group_by="ticker", 
+                    progress=False, 
+                    threads=True,
+                    session=session
+                )
+                if b_data is None or b_data.empty:
+                    continue
+                
+                if len(batch) == 1:
+                    t = batch[0]
+                    b_df = b_data.dropna().copy()
+                    if not b_df.empty:
+                        dfs_by_ticker[t] = b_df
+                        set_cached_bar(t, b_df)
+                else:
+                    if isinstance(b_data.columns, pd.MultiIndex):
+                        avail_tickers = set(b_data.columns.get_level_values(0))
+                        for t in batch:
+                            if t in avail_tickers:
+                                try:
+                                    t_df = b_data[t].dropna().copy()
+                                    if not t_df.empty:
+                                        dfs_by_ticker[t] = t_df
+                                        set_cached_bar(t, t_df)
+                                except Exception:
+                                    pass
+            except Exception:
                 continue
-            if len(batch) == 1:
-                t = batch[0]
-                b_df = b_data.dropna().copy()
-                if not b_df.empty:
-                    dfs_by_ticker[t] = b_df
-            else:
-                if isinstance(b_data.columns, pd.MultiIndex):
-                    avail_tickers = set(b_data.columns.get_level_values(0))
-                    for t in batch:
-                        if t in avail_tickers:
-                            try:
-                                t_df = b_data[t].dropna().copy()
-                                if not t_df.empty:
-                                    dfs_by_ticker[t] = t_df
-                            except Exception:
-                                pass
-        except Exception:
-            continue
 
     if not dfs_by_ticker:
-        return {"status": "error", "message": "No intraday data returned from Yahoo Finance", "opportunities": []}
+        return {"status": "error", "message": "No intraday data available from Yahoo Finance (Rate limited or market closed)", "opportunities": []}
 
     setups = []
     scanned_dates = set()
@@ -299,6 +367,8 @@ def scan_live_market(
         "market": mkt,
         "scanned_date": primary_date,
         "scanned_tickers_count": len(clean_tickers),
+        "cached_tickers_count": len(clean_tickers) - len(tickers_to_fetch),
+        "fetched_tickers_count": len(tickers_to_fetch),
         "opportunities_count": len(setups),
         "opportunities": setups
     }
