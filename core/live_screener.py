@@ -21,13 +21,41 @@ def get_market_status() -> Dict[str, Any]:
     
     is_open = (not is_weekend) and (mkt_open <= now <= mkt_close)
     
+    # Silent Flip intraday window: strictly 10:00 AM to 4:00 PM EST on weekdays
+    scan_start = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    is_scanning_hours = (not is_weekend) and (scan_start <= now <= mkt_close)
+    
     status_str = "OPEN (Live Market)" if is_open else ("CLOSED (Weekend)" if is_weekend else "CLOSED (After Hours / Pre-Market)")
+    
+    # Calculate next trading day 10:00 AM EST
+    target_next_scan = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    if now >= target_next_scan or is_weekend:
+        days_ahead = 1
+        candidate = now + datetime.timedelta(days=days_ahead)
+        while candidate.weekday() >= 5:
+            days_ahead += 1
+            candidate = now + datetime.timedelta(days=days_ahead)
+        target_next_scan = candidate.replace(hour=10, minute=0, second=0, microsecond=0)
+
+    seconds_to_next_scan = max(0, int((target_next_scan - now).total_seconds()))
+
+    def fmt_seconds(s):
+        h = s // 3600
+        m = (s % 3600) // 60
+        sec = s % 60
+        if h > 0:
+            return f"{h}h {m}m {sec}s"
+        return f"{m}m {sec}s"
     
     return {
         "is_open": is_open,
+        "is_scanning_hours": is_scanning_hours,
         "is_weekend": is_weekend,
         "current_time_est": now.strftime("%Y-%m-%d %H:%M:%S EST"),
-        "status_label": status_str
+        "status_label": status_str,
+        "next_scan_time_est": target_next_scan.strftime("%Y-%m-%d 10:00:00 EST"),
+        "countdown_to_scan": fmt_seconds(seconds_to_next_scan),
+        "seconds_to_next_scan": seconds_to_next_scan
     }
 
 import time

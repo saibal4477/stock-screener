@@ -759,7 +759,7 @@
         <div>
           <div class="flex items-center space-x-2">
             <span class="px-3 py-1 rounded-full bg-amber-950/90 border border-amber-500/50 text-amber-400 text-xs font-bold tracking-wide uppercase flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <span id="liveStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
               <span id="liveStatusText">Live Yahoo Finance Scanner</span>
             </span>
             <span id="liveSessionBadge" class="px-2.5 py-1 rounded-full bg-gray-900 text-gray-300 border border-gray-700 text-xs font-mono">
@@ -784,7 +784,7 @@
           </div>
           <div class="flex items-center justify-end space-x-2">
             <span id="autoScanBadge" class="px-3 py-1 rounded-full bg-sky-950/90 text-sky-300 border border-sky-700 text-xs font-mono font-bold">
-              ⏱️ Next Auto-Scan in: <span id="autoScanTimer" class="text-amber-400">--:--</span>
+              <span id="autoScanLabel">⏱️ Next Auto-Scan in: </span><span id="autoScanTimer" class="text-amber-400">--:--</span>
             </span>
           </div>
           <div class="flex items-center justify-end space-x-4 text-xs font-semibold">
@@ -1775,6 +1775,7 @@
 
     let autoScanInterval = null;
     let nextScanTime = null;
+    let currentMarketStatus = null;
 
     function initAutoScanner() {
       if (autoScanInterval) clearInterval(autoScanInterval);
@@ -1792,12 +1793,25 @@
       nextScanTime = computeNextSlot();
 
       autoScanInterval = setInterval(() => {
+        // If market is NOT open for scanning (e.g. Weekend or outside 10:00 AM - 4:00 PM EST), DO NOT SCAN!
+        if (currentMarketStatus && !currentMarketStatus.is_scanning_hours) {
+          const autoBadge = document.getElementById('autoScanBadge');
+          const autoLabel = document.getElementById('autoScanLabel');
+          const timerEl = document.getElementById('autoScanTimer');
+          if (autoBadge) autoBadge.className = "px-3 py-1 rounded-full bg-gray-900/90 text-gray-400 border border-gray-700 text-xs font-mono";
+          if (autoLabel) autoLabel.innerText = "⏸️ Market Closed • Next Scan: ";
+          if (timerEl && currentMarketStatus.countdown_to_scan) {
+            timerEl.innerText = currentMarketStatus.countdown_to_scan;
+          }
+          return; // Stay completely dormant!
+        }
+
         const now = new Date();
         const diffMs = nextScanTime - now;
 
         if (diffMs <= 0) {
           const autoScanOn = document.getElementById('autoScanToggle') && document.getElementById('autoScanToggle').checked;
-          if (autoScanOn) {
+          if (autoScanOn && currentMarketStatus && currentMarketStatus.is_scanning_hours) {
             handleRunLiveScan();
           }
           nextScanTime = computeNextSlot();
@@ -1805,7 +1819,11 @@
           const diffSec = Math.floor(diffMs / 1000);
           const m = Math.floor(diffSec / 60);
           const s = diffSec % 60;
+          const autoBadge = document.getElementById('autoScanBadge');
+          const autoLabel = document.getElementById('autoScanLabel');
           const timerEl = document.getElementById('autoScanTimer');
+          if (autoBadge) autoBadge.className = "px-3 py-1 rounded-full bg-sky-950/90 text-sky-300 border border-sky-700 text-xs font-mono font-bold";
+          if (autoLabel) autoLabel.innerText = "⏱️ Next Auto-Scan in: ";
           if (timerEl) {
             timerEl.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
           }
@@ -1823,6 +1841,8 @@
         } else {
           badge.classList.add('opacity-40');
           const timerEl = document.getElementById('autoScanTimer');
+          const autoLabel = document.getElementById('autoScanLabel');
+          if (autoLabel) autoLabel.innerText = "⏸️ Auto-Scan: ";
           if (timerEl) timerEl.innerText = 'Paused';
         }
       }
@@ -1850,10 +1870,48 @@
         const resp = await fetch('/api/market_status');
         if (resp.ok) {
           const data = await resp.json();
+          currentMarketStatus = data;
+
           const badge = document.getElementById('liveSessionBadge');
           const clock = document.getElementById('liveClockText');
-          if (badge) badge.innerText = data.status_label;
+          const statusText = document.getElementById('liveStatusText');
+          const statusDot = document.getElementById('liveStatusDot');
+          const autoBadge = document.getElementById('autoScanBadge');
+          const autoLabel = document.getElementById('autoScanLabel');
+          const autoTimer = document.getElementById('autoScanTimer');
+
           if (clock) clock.innerText = data.current_time_est;
+
+          if (!data.is_scanning_hours) {
+            // Market is CLOSED (Weekend or Outside 10:00 AM - 4:00 PM EST)
+            if (badge) {
+              badge.innerText = data.status_label;
+              badge.className = "px-2.5 py-1 rounded-full bg-red-950/80 text-red-300 border border-red-800 text-xs font-mono font-bold";
+            }
+            if (statusText) statusText.innerText = "Market Closed (Dormant)";
+            if (statusDot) {
+              statusDot.className = "w-2 h-2 rounded-full bg-red-500"; // static, not pulsing
+            }
+            if (autoBadge) {
+              autoBadge.className = "px-3 py-1 rounded-full bg-gray-900/90 text-gray-400 border border-gray-700 text-xs font-mono";
+            }
+            if (autoLabel) autoLabel.innerText = "⏸️ Market Closed • Next Scan: ";
+            if (autoTimer) autoTimer.innerText = data.countdown_to_scan || "Mon 10:00 AM";
+          } else {
+            // Market is actively open and in the 10:00 AM - 4:00 PM EST intraday window
+            if (badge) {
+              badge.innerText = "🟢 " + data.status_label;
+              badge.className = "px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-xs font-mono font-bold";
+            }
+            if (statusText) statusText.innerText = "Live Market Active";
+            if (statusDot) {
+              statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+            }
+            if (autoBadge) {
+              autoBadge.className = "px-3 py-1 rounded-full bg-sky-950/90 text-sky-300 border border-sky-700 text-xs font-mono font-bold";
+            }
+            if (autoLabel) autoLabel.innerText = "⏱️ Next Auto-Scan in: ";
+          }
         }
       } catch (e) {}
     }
