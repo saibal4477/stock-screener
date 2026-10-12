@@ -778,9 +778,25 @@
           </p>
         </div>
         
-        <div class="text-right">
-          <div id="liveClockText" class="text-xs text-gray-400 font-mono">EST Time</div>
-          <div class="text-[11px] text-emerald-400 mt-1 font-semibold">Opening Range: 9:30–10:00 AM | Entry: ≥ 10:00 AM EST</div>
+        <div class="text-right space-y-2">
+          <div class="flex items-center justify-end space-x-2">
+            <span id="liveClockText" class="text-xs text-gray-300 font-mono">EST Time</span>
+          </div>
+          <div class="flex items-center justify-end space-x-2">
+            <span id="autoScanBadge" class="px-3 py-1 rounded-full bg-sky-950/90 text-sky-300 border border-sky-700 text-xs font-mono font-bold">
+              ⏱️ Next Auto-Scan in: <span id="autoScanTimer" class="text-amber-400">--:--</span>
+            </span>
+          </div>
+          <div class="flex items-center justify-end space-x-4 text-xs font-semibold">
+            <label class="flex items-center space-x-1.5 cursor-pointer text-gray-300 hover:text-white">
+              <input type="checkbox" id="autoScanToggle" checked onchange="toggleAutoScan()" class="w-3.5 h-3.5 rounded bg-gray-900 border-gray-700 text-amber-500 focus:ring-0">
+              <span>Auto-Trigger at 10:00 AM &amp; 15m</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-gray-300 hover:text-white">
+              <input type="checkbox" id="audioAlertToggle" checked class="w-3.5 h-3.5 rounded bg-gray-900 border-gray-700 text-emerald-500 focus:ring-0">
+              <span>🔔 Sound Alert</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -1005,6 +1021,10 @@
         document.getElementById('viewLive').classList.remove('hidden');
         document.getElementById('tabLiveBtn').classList.add('active');
         fetchLiveMarketStatus();
+        initAutoScanner();
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
       }
     }
 
@@ -1723,6 +1743,78 @@
       }
     }
 
+    let autoScanInterval = null;
+    let nextScanTime = null;
+
+    function initAutoScanner() {
+      if (autoScanInterval) clearInterval(autoScanInterval);
+
+      // Compute next 15-minute slot aligned to :00, :15, :30, :45 (with +5s grace for bar close)
+      function computeNextSlot() {
+        const now = new Date();
+        const mins = now.getMinutes();
+        const nextMin = (Math.floor(mins / 15) + 1) * 15;
+        const target = new Date(now);
+        target.setMinutes(nextMin, 5, 0); // 5 seconds after candle close
+        return target;
+      }
+
+      nextScanTime = computeNextSlot();
+
+      autoScanInterval = setInterval(() => {
+        const now = new Date();
+        const diffMs = nextScanTime - now;
+
+        if (diffMs <= 0) {
+          const autoScanOn = document.getElementById('autoScanToggle') && document.getElementById('autoScanToggle').checked;
+          if (autoScanOn) {
+            handleRunLiveScan();
+          }
+          nextScanTime = computeNextSlot();
+        } else {
+          const diffSec = Math.floor(diffMs / 1000);
+          const m = Math.floor(diffSec / 60);
+          const s = diffSec % 60;
+          const timerEl = document.getElementById('autoScanTimer');
+          if (timerEl) {
+            timerEl.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          }
+        }
+      }, 1000);
+    }
+
+    function toggleAutoScan() {
+      const isChecked = document.getElementById('autoScanToggle').checked;
+      const badge = document.getElementById('autoScanBadge');
+      if (badge) {
+        if (isChecked) {
+          badge.classList.remove('opacity-40');
+          initAutoScanner();
+        } else {
+          badge.classList.add('opacity-40');
+          const timerEl = document.getElementById('autoScanTimer');
+          if (timerEl) timerEl.innerText = 'Paused';
+        }
+      }
+    }
+
+    function playAlertChime() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.8);
+      } catch (e) {}
+    }
+
     async function fetchLiveMarketStatus() {
       try {
         const resp = await fetch('/api/market_status');
@@ -1765,6 +1857,20 @@
 
         const data = await res.json();
         renderLiveResults(data);
+
+        // Sound alert & Desktop notification on opportunities found
+        if (data.opportunities && data.opportunities.length > 0) {
+          const audioOn = document.getElementById('audioAlertToggle') && document.getElementById('audioAlertToggle').checked;
+          if (audioOn) playAlertChime();
+
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const top = data.opportunities[0];
+            new Notification(`⚡ ${data.opportunities.length} Intraday Setups Found!`, {
+              body: `Top: ${top.ticker} (${top.direction} @ ${top.tested_level}) - R:R: ${top.planned_rr}x`,
+              icon: '/static/favicon.ico'
+            });
+          }
+        }
       } catch (err) {
         alert('Scan request failed: ' + err.message);
       } finally {
