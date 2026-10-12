@@ -800,6 +800,36 @@
         </div>
       </div>
 
+      <!-- Server Background Automation Status Banner -->
+      <div class="card-dark rounded-2xl p-4 border border-emerald-500/20 bg-emerald-950/20 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center space-x-2">
+              <span>🤖 Internal Web Server Scheduler (Daemon Active)</span>
+              <span id="schedulerRunningBadge" class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono">Running</span>
+            </div>
+            <div class="text-[11px] text-gray-400 mt-0.5">
+              Automated 10:00 AM EST Intraday Scan &amp; 4:30 PM EST Closing Data SQLite &amp; GCS Bucket Sync
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="px-3 py-1.5 rounded-xl bg-gray-900/80 border border-gray-800 text-xs">
+            <span class="text-gray-400">⏰ Next 10:00 AM Scan:</span>
+            <span id="sched10amCountdown" class="text-amber-400 font-mono font-bold ml-1">--</span>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-gray-900/80 border border-gray-800 text-xs">
+            <span class="text-gray-400">☁️ Next 4:30 PM GCS Sync:</span>
+            <span id="sched430pmCountdown" class="text-sky-400 font-mono font-bold ml-1">--</span>
+          </div>
+          <button type="button" onclick="triggerManualGcsSync()" id="btnSyncGcsNow" class="px-3 py-1.5 bg-sky-600/80 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow">
+            <span id="gcsSyncIcon">☁️</span>
+            <span id="gcsSyncText">Sync Closing Data to GCS Now</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Scanner Controls Form -->
       <form id="liveScanForm" onsubmit="handleRunLiveScan(event)" class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1828,6 +1858,58 @@
       } catch (e) {}
     }
 
+    async function fetchSchedulerStatus() {
+      try {
+        const resp = await fetch('/api/scheduler_status');
+        if (resp.ok) {
+          const data = await resp.json();
+          const c10 = document.getElementById('sched10amCountdown');
+          const c430 = document.getElementById('sched430pmCountdown');
+          const badge = document.getElementById('schedulerRunningBadge');
+          if (c10) c10.innerText = data.countdown_10am || '--';
+          if (c430) c430.innerText = data.countdown_430pm || '--';
+          if (badge) {
+            if (data.is_running) {
+              badge.innerText = 'Active Daemon';
+              badge.className = 'px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono';
+            } else {
+              badge.innerText = 'Paused';
+              badge.className = 'px-2 py-0.5 rounded text-[10px] bg-gray-700 text-gray-400 font-mono';
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function triggerManualGcsSync() {
+      const btn = document.getElementById('btnSyncGcsNow');
+      const icon = document.getElementById('gcsSyncIcon');
+      const text = document.getElementById('gcsSyncText');
+      if (btn) btn.disabled = true;
+      if (icon) icon.innerText = '⏳';
+      if (text) text.innerText = 'Syncing closing data to GCS...';
+
+      try {
+        const resp = await fetch('/api/admin/update_daily_closing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          alert(`✅ Daily Closing DB & GCS Sync Completed!\n\nDate: ${data.date}\nInserted: ${data.rows_inserted} bars\n${data.gcs_status}`);
+          fetchSchedulerStatus();
+        } else {
+          alert(`❌ Sync Notice: ${data.detail || 'Failed to update'}`);
+        }
+      } catch (err) {
+        alert('❌ Error calling daily update endpoint: ' + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.innerText = '☁️';
+        if (text) text.innerText = 'Sync Closing Data to GCS Now';
+      }
+    }
+
     async function handleRunLiveScan(e) {
       if (e) e.preventDefault();
       const btn = document.getElementById('btnRunLiveScan');
@@ -2178,10 +2260,13 @@
       if (e.key === 'Escape') closeModal();
     });
 
-    // Run default backtest automatically on load & fetch market status
+    // Run default backtest automatically on load & fetch market and scheduler status
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnRunBacktest').click();
       fetchLiveMarketStatus();
+      fetchSchedulerStatus();
+      setInterval(fetchSchedulerStatus, 15000);
+      setInterval(fetchLiveMarketStatus, 30000);
     });
   </script>
 </body>

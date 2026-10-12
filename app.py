@@ -10,6 +10,7 @@ from core.db import get_connection, get_universe_tickers, get_company_metadata
 from core.portfolio import simulate_portfolio
 from core.charting import generate_candlestick_chart, generate_live_candlestick_chart
 from core.live_screener import scan_live_market, get_market_status
+from core.scheduler import start_internal_scheduler, get_scheduler_status
 from strategies import list_strategies, get_strategy
 
 app = FastAPI(
@@ -28,7 +29,8 @@ if os.path.exists(config.CHARTS_DIR):
 templates = Jinja2Templates(directory=os.path.join(config.BASE_DIR, "templates"))
 
 @app.on_event("startup")
-def download_gcs_database_if_configured():
+def startup_event():
+    # 1. Download GCS database if configured
     bucket_name = os.environ.get("GCS_BUCKET_NAME")
     if bucket_name and not os.path.exists(config.DB_PATH_15M):
         try:
@@ -52,6 +54,14 @@ def download_gcs_database_if_configured():
             print("Notice: google-cloud-storage not installed, skipping GCS download.")
         except Exception as e:
             print(f"Warning: Could not download DB from GCS bucket '{bucket_name}': {e}")
+            
+    # 2. Start internal web server daemon scheduler (10:00 AM Scan + 4:30 PM GCS Sync)
+    start_internal_scheduler()
+
+@app.get("/api/scheduler_status")
+def api_get_scheduler_status():
+    """Returns current live countdowns and execution history for the internal web server scheduler."""
+    return get_scheduler_status()
 
 class BacktestRequest(BaseModel):
     strategy_id: str = "silent_flip"
